@@ -6,11 +6,10 @@ courses = Table(
     metadata,
     Column("course_code", String, primary_key=True),
     Column("course_name", String, nullable=False),
-    Column("professor", String, nullable=True),
-    Column("day_of_week", String, nullable=True),
-    Column("start_time", Time, nullable=True),
-    Column("end_time", Time, nullable=True),
-    Column("room", String, nullable=True),
-    Column("credit", Integer, nullable=True),
+    Column("professor", String, nullable=False),
+    Column("day_of_week", String, nullable=False),
+    Column("start_time", Time, nullable=False),
+    Column("end_time", Time, nullable=False),
+    Column("room", String, nullable=False),
+    Column("credit", Integer, nullable=False),
 )
-

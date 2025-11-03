@@ -9,7 +9,7 @@ users = Table(
     Column("firebase_uid", String, unique=True, nullable=True),        
     Column("username", String, nullable=False),                       
     Column("email", String, unique=True, nullable=False),              
-    Column("password", String, nullable=True),                         
+    Column("password", String, nullable=False),                         
     Column("created_at", DateTime, default=datetime.utcnow),           
 )
 

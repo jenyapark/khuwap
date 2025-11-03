@@ -4,15 +4,13 @@ from datetime import time
 class Course(BaseModel):
     course_code: str
     course_name: str
-    professor: str | None = None
-    day_of_week: str | None = None
-    start_time: time | None = None
-    end_time: time | None = None
-    room: str | None = None
-    credit: int | None = None
+    professor: str
+    day_of_week: str
+    start_time: time
+    end_time: time
+    room: str
+    credit: int
 
-    class Config:
-        orm_mode = True
 
 class CourseCreate(Course):
     pass
