@@ -9,7 +9,7 @@ exchange = Table(
     Column("author_id", String, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False),
     Column("current_course", String, ForeignKey("courses.course_code", ondelete="CASCADE"), nullable=False),
     Column("desired_course", String, ForeignKey("courses.course_code", ondelete="CASCADE"), nullable=False),
-    Column("status", String, default="OPEN"),  
-    Column("created_at", DateTime, default=datetime.utcnow)
+    Column("status", String, default="open"),  
+    Column("created_at", DateTime, default=datetime.get_kst_time)
 )
 
