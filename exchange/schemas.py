@@ -9,14 +9,30 @@ class Exchange(BaseModel):
     status: Optional[str] = Field(default = "open", description = "게시글 상태")
     note: Optional[str] = Field(None, description = "추가 설명")
 
+#게시글 등록용
 class ExchangeCreate(Exchange):
     pass
 
+#게시글 수정용
 class ExchangeUpdate(BaseModel):
-    note = Optional[str] = Field(None, description = "추가 설명 수정")
+    note: Optional[str] = Field(None, description = "추가 설명 수정")
 
+#교환 요청
+class ExchangeRequestCreate(BaseModel):
+    exchange_id: int = Field(..., description="게시글 ID (post_id)")
+    requester_id: int = Field(..., description="요청자(user_id)")
+
+#요청 응답
+class ExchangeRequestResponse(BaseModel):
+    id: int
+    exchange_id: int
+    requester_id: str
+    status: str
+    created_at: datetime
+
+#게시글 조회
 class ExchangeResponse(Exchange):
-    post_id: str
+    post_id: int
     created_at: datetime
 
     class Config:

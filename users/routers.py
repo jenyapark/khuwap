@@ -1,21 +1,23 @@
 from fastapi import APIRouter, status
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select, insert, delete, update
 from common.db import engine
 from common.responses import success_response, error_response
 from users.models import users
 from users.schemas import User, UserCreate
 
-router = APIRouter(prefix="/users", tags=["Users"])
+router = APIRouter(prefix="/users", tags=["users"])
 
 #전체 사용자 조회
 @router.get("/")
 async def get_users():
     with engine.connect() as conn:
         result = conn.execute(select(users))
-        rows = result.fetchall()
+        rows = result.mappings().all()
         return success_response(
-            data = [dict(row._mapping) for row in rows],
-            message = "전체 사용자 목록이 조회되었습니다."
+            data = jsonable_encoder(rows),
+            message = "전체 사용자 목록이 조회되었습니다.",
+            status_code = 200,
         )
 
 #사용자 등록
@@ -36,7 +38,7 @@ async def create_user(user: User):
         conn.commit()
 
         return success_response(
-            data = user.dict(),
+            data = user.model_dump(),
             message = "사용자가 성공적으로 등록되었습니다.",
             status_code = 201
         )

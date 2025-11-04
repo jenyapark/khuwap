@@ -1,5 +1,6 @@
 from fastapi import APIRouter, status
-from sqlalchemy import select, insert, delete
+from fastapi.encoders import jsonable_encoder
+from sqlalchemy import select, insert, delete, update, and_
 from common.db import engine
 from common.responses import success_response, error_response
 from schedules.models import schedules
@@ -7,11 +8,11 @@ from schedules.schemas import ScheduleCreate
 from users.models import users
 from courses.models import courses
 
-router = APIRouter(prefix="/schedules", tags=["Schedules"])
+router = APIRouter(prefix="/schedules", tags=["schedules"])
 
 #수강 등록(유저 존재 확인 -> 과목 존재 확인 -> 중복 수강 확인 -> 정상 등록)
 @router.post("/")
-async def create_schedule(schedule: ScheduleCreate):
+def create_schedule(schedule: ScheduleCreate):
     with engine.connect() as conn:
         user_exists = conn.execute(
             select(users)
@@ -62,11 +63,11 @@ async def create_schedule(schedule: ScheduleCreate):
 
 #사용자별 수강 내역 조회
 @router.get("/{user_id}", status_code = status.HTTP_200_OK)
-async def get_user_schedules(user_id: str):
+def get_user_schedules(user_id: str):
     with engine.connect() as conn:
         result = conn.execute(
             select(schedules).where(schedules.c.user_id == user_id)
-        ).fetchall()
+        )
 
         if not result:
             return success_response(
@@ -74,15 +75,15 @@ async def get_user_schedules(user_id: str):
                 message = "해당 사용자의 수강 내역이 없습니다."
             )
 
-        rows = [dict(row._mapping) for row in result]
+        rows = result.mappings().all()
         return success_response(
-            data = rows,
+            data = jsonable_encoder(rows),
             message = "수강 내역 조회 성공"
         )
 
 #수강 취소
 @router.delete("/{user_id}/{course_code}")
-async def delete_schedule(user_id: str, course_code: str):
+def delete_schedule(user_id: str, course_code: str):
     with engine.connect() as conn:
         existing = conn.execute(
             select(schedules).where(
