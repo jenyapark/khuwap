@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status
 from fastapi.encoders import jsonable_encoder
-from sqlalchemy import select, insert, delete, update, and_
+from sqlalchemy import select, insert, delete, update, and_, or_
 from common.db import engine
 from common.responses import success_response, error_response
 from schedules.models import schedules
@@ -10,10 +10,12 @@ from courses.models import courses
 
 router = APIRouter(prefix="/schedules", tags=["schedules"])
 
-#수강 등록(유저 존재 확인 -> 과목 존재 확인 -> 중복 수강 확인 -> 정상 등록)
+#수강 등록
 @router.post("/")
 def create_schedule(schedule: ScheduleCreate):
     with engine.connect() as conn:
+
+        #유저 존재 확인
         user_exists = conn.execute(
             select(users)
             .where(users.c.user_id == schedule.user_id)
@@ -25,6 +27,7 @@ def create_schedule(schedule: ScheduleCreate):
                 status_code = 404
             )
         
+        #과목 존재 확인
         course_exists = conn.execute(
             select(courses)
             .where(courses.c.course_code == schedule.course_code)
@@ -36,6 +39,25 @@ def create_schedule(schedule: ScheduleCreate):
                 status_code = 404
             )
         
+        #같은 과목의 분반 중복 수강 방지
+        same_name_course = conn.execute(
+            select(courses)
+            .join(schedules, courses.c.course_code == schedules.c.course_code)
+            .where(
+                and_(
+                    schedules.c.user_id == schedule.user_id,
+                    courses.c.course_name == course_exists.course_name
+                )
+            )
+        ).fetchone()
+
+        if same_name_course:
+            return error_response(
+                message = "같은 과목의 분반은 중복 수강할 수 없습니다.",
+                status_code=409
+            )
+        
+        #같은 과목 코드 중복 수강 확인
         existing = conn.execute(
             select(schedules).where(
                 and_(
@@ -51,12 +73,36 @@ def create_schedule(schedule: ScheduleCreate):
                 status_code = 409
             )
         
+        #시간대 중복 여부
+        overlapping = conn.execute(
+            select(schedules)
+            .join(courses, schedules.c.course_code == courses.c.course_code)
+            .where(
+                and_(
+                    schedules.c.user_id == schedule.user_id,
+                    courses.c.day_of_week == course_exists.day_of_week,
+                    or_(
+                        and_(
+                            courses.c.start_time < course_exists.end_time,
+                            courses.c.end_time > course_exists.start_time
+                        )
+                    )
+                )
+            )
+        ).fetchone()
 
-        conn.execute(insert(schedules).values(**schedule.dict()))
+        if overlapping:
+            return error_response(
+                message = "이미 같은 시간대에 다른 과목이 등록되어 있습니다.",
+                status_code=409,
+            )
+        
+
+        conn.execute(insert(schedules).values(**jsonable_encoder(schedule)))
         conn.commit()
 
         return success_response(
-            data = schedule.dict(),
+            data = jsonable_encoder(schedule),
             message = "수강 신청이 완료되었습니다.",
             status_code = 201
         )

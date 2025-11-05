@@ -39,7 +39,7 @@ def create_course(course: CourseCreate):
         conn.commit()
 
         return success_response(
-            data = course.dict(),
+            data = jsonable_encoder(course),
             message = "과목이 정상적으로 등록되었습니다.",
             status_code = 201
         )

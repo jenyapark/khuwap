@@ -5,6 +5,7 @@ from common.db import engine
 from common.responses import success_response, error_response
 from exchange.models import exchange, exchange_requests
 from exchange.schemas import ExchangeCreate, ExchangeUpdate, ExchangeResponse, ExchangeRequestCreate, ExchangeRequestResponse
+from exchange.validators.post import valiate_post_creation
 
 router = APIRouter(prefix="/exchange", tags = ["exchange"])
 
@@ -12,6 +13,15 @@ router = APIRouter(prefix="/exchange", tags = ["exchange"])
 @router.post("/", response_model = ExchangeResponse)
 def create_exchange_post(payload: ExchangeCreate):
     with engine.connect() as conn:
+        is_valid, message = valiate_post_creation(
+            user_id=payload.author_id,
+            current_course= payload.current_course,
+            desired_course=payload.desired_course,
+            conn=conn
+        )
+        if not is_valid:
+            return error_response(message = message, status_code=400)
+        
         new_post = payload.model_dump()
         result = conn.execute(
             insert(exchange).values(**new_post).returning(exchange)
