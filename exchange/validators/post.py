@@ -36,7 +36,7 @@ def valiate_post_creation(user_id: str, current_course: str, desired_course: str
     
     desired_course_info = conn.execute(
         select(courses).where(courses.c.course_code == desired_course)
-    ).mappings().all()
+    ).mappings().first()
 
     if not current_course_info or not desired_course_info:
         return False, "존재하지 않는 과목 코드입니다."

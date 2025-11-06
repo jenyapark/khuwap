@@ -13,17 +13,29 @@ router = APIRouter(prefix="/exchange/request", tags=["exchange-request"])
 @router.post("/")
 def create_exchange_request(payload: ExchangeRequestCreate):
     with engine.connect() as conn:
+
+        #UUID로 교환 게시글 찾기
+        target_post = conn.execute(
+            select(exchange).where(exchange.c.exchange_uuid == payload.exchange_uuid)
+        ).mappings().first()
+
+        if not target_post:
+            return error_response(message="존재하지 않는 게시글입니다.", status_code=404)
+        
+        #교환 요청 생성
         conn.execute(
             insert(exchange_requests).values(
-                exchange_post_id = payload.exchange_id,
+                exchange_post_id = target_post["post_id"],
+                exchange_post_uuid = payload.exchange_uuid,
                 requester_id = payload.requester_id,
                 status = "pending"
             )
         )
 
+        #게시글 상태 업데이트
         conn.execute(
             update(exchange)
-            .where(exchange.c.post_id == payload.exchange_id)
+            .where(exchange.c.exchange_uuid == payload.exchange_uuid)
             .values(status="pending")
         )
 
@@ -58,8 +70,8 @@ def get_sent_requests(user_id: str):
     with engine.connect() as conn:
         result = conn.execute(
             select(exchange_requests)
-            .wehre(exchange_requests.c.requester_id == user_id)
-            .order_be(exchange_requests.c.created_at.desc())
+            .where(exchange_requests.c.requester_id == user_id)
+            .order_by(exchange_requests.c.created_at.desc())
         )
         requests = result.mappings().all()
     

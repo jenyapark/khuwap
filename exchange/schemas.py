@@ -19,13 +19,13 @@ class ExchangeUpdate(BaseModel):
 
 #교환 요청
 class ExchangeRequestCreate(BaseModel):
-    exchange_id: int = Field(..., description="게시글 ID (post_id)")
+    exchange_uuid: str = Field(..., description="게시글 UUID (post_uuid)")
     requester_id: int = Field(..., description="요청자(user_id)")
 
 #요청 응답
 class ExchangeRequestResponse(BaseModel):
-    id: int
-    exchange_id: int
+    request_id: int
+    exchange_post_uuid: str
     requester_id: str
     status: str
     created_at: datetime
@@ -33,6 +33,7 @@ class ExchangeRequestResponse(BaseModel):
 #게시글 조회
 class ExchangeResponse(Exchange):
     post_id: int
+    exchange_uuid: str
     created_at: datetime
 
     class Config:
