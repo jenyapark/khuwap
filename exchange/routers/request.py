@@ -5,6 +5,7 @@ from common.db import engine
 from common.responses import success_response, error_response
 from exchange.models import exchange, exchange_requests
 from exchange.schemas import ExchangeCreate, ExchangeUpdate, ExchangeResponse, ExchangeRequestCreate, ExchangeRequestResponse
+from exchange.validators.request import validate_requests_creation, validate_request_acceptance
 from schedules.models import schedules
 
 router = APIRouter(prefix="/exchange/request", tags=["exchange-request"])
@@ -12,25 +13,37 @@ router = APIRouter(prefix="/exchange/request", tags=["exchange-request"])
 #요청 생성
 @router.post("/")
 def create_exchange_request(payload: ExchangeRequestCreate):
+
+    is_valid, message = validate_requests_creation(
+        requester_id=payload.requester_id,
+        exchange_uuid=payload.exchange_uuid
+    )
+
+    if not is_valid:
+        return error_response(
+            message="요청 생성 검사 실패: "+ message,
+            status_code=400,
+        )
+
     with engine.connect() as conn:
 
-        #UUID로 교환 게시글 찾기
         target_post = conn.execute(
-            select(exchange).where(exchange.c.exchange_uuid == payload.exchange_uuid)
+            select(exchange.c.post_id)
+            .where(exchange.c.exchange_uuid == payload.exchange_uuid)
         ).mappings().first()
 
-        if not target_post:
-            return error_response(message="존재하지 않는 게시글입니다.", status_code=404)
-        
         #교환 요청 생성
-        conn.execute(
+        result = conn.execute(
             insert(exchange_requests).values(
                 exchange_post_id = target_post["post_id"],
                 exchange_post_uuid = payload.exchange_uuid,
                 requester_id = payload.requester_id,
                 status = "pending"
             )
+            .returning(exchange_requests.c.request_uuid)
         )
+
+        created = result.mappings().first()
 
         #게시글 상태 업데이트
         conn.execute(
@@ -43,23 +56,42 @@ def create_exchange_request(payload: ExchangeRequestCreate):
     
     return success_response(
         message = "교환 요청이 전송되었습니다.",
+        data = {"request_uuid": created["request_uuid"]},
         status_code=201,
         )
 
 #교환 요청 취소
-@router.delete("/sent/{request_id}")
-def delete_exchange_request(request_id: int):
+@router.delete("/sent/{request_uuid}")
+def delete_exchange_request(request_uuid: str):
     with engine.connect() as conn:
+        
         existing = conn.execute(
-            select(exchange_requests).where(exchange_requests.c.request_id == request_id)
+            select(exchange_requests).where(exchange_requests.c.request_uuid == request_uuid)
         ).mappings().first()
 
         if not existing:
             return error_response(message="요청을 찾을 수 없습니다.", status_code=404)
         
-        conn.excute(
-            delete(exchange_requests).where(exchange_requests.c.request_id == request_id)
+        exchange_post_uuid = existing["exchange_post_uuid"]
+
+        conn.execute(
+            delete(exchange_requests).where(exchange_requests.c.request_uuid == request_uuid)
         )
+
+        remaining_requests = conn.execute(
+            select(exchange_requests)
+            .where(
+                (exchange_requests.c.exchagne_post_uuid == exchange_post_uuid)
+                & (exchange_requests.c.status == "pending")
+            )
+        ).mappings().all()
+
+        if not remaining_requests:
+            conn.execute(
+                update(exchange)
+                .where(exchange.c.exchange_uuid == exchange_post_uuid)
+                .values(status="open")
+            )
         conn.commit()
 
     return success_response(message="교환 요청이 취소되었습니다.", status_code=200)
@@ -88,19 +120,19 @@ def get_sent_requests(user_id: str):
     )
 
 #요청 수락
-@router.patch("/{request_id}/accept")
-def accept(request_id: int):
+@router.patch("/{request_uuid}/accept")
+def accept(request_uuid: str):
     with engine.connect() as conn:
         conn.execute(
             update(exchange_requests)
-            .where(exchange_requests.c.request_id == request_id)
+            .where(exchange_requests.c.request_uuid == request_uuid)
             .values(status="accepted")
         )
 
         conn.execute(
             update(exchange)
             .where(exchange.c.post_id == select(exchange_requests.c.exchange_post_id)
-                   .where(exchange_requests.c.request_id == request_id)
+                   .where(exchange_requests.c.request_uuid == request_uuid)
                    .scalar_subquery())
             .values(status="completed")
         )

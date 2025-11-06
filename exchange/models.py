@@ -7,7 +7,7 @@ exchange = Table(
     "exchange",
     metadata,
     Column("post_id", Integer, primary_key=True, autoincrement=True),  
-    Column("exchange_uuid", String, unique=True, default=lambda: str(uuid.uuid4())),
+    Column("exchange_uuid", String, unique=True, nullable=False, default=lambda: str(uuid.uuid4())),
     Column("author_id", String, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False),
     Column("current_course", String, ForeignKey("courses.course_code", ondelete="CASCADE"), nullable=False),
     Column("desired_course", String, ForeignKey("courses.course_code", ondelete="CASCADE"), nullable=False),
@@ -20,6 +20,13 @@ exchange_requests = Table(
     "exchange_requests",
     metadata,
     Column("request_id", Integer, primary_key=True, autoincrement=True),
+    Column(
+        "request_uuid",
+        String,
+        unique=True,
+        nullable=False,
+        default=lambda: str(uuid.uuid4()),
+    ),
     Column(
         "exchange_post_id",
         Integer,

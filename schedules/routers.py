@@ -39,6 +39,22 @@ def create_schedule(schedule: ScheduleCreate):
                 status_code = 404
             )
         
+        #같은 과목 코드 중복 수강 확인
+        existing = conn.execute(
+            select(schedules).where(
+                and_(
+                    schedules.c.user_id == schedule.user_id,
+                    schedules.c.course_code == schedule.course_code
+                )
+            )
+        ).fetchone()
+
+        if existing:
+            return error_response(
+                message = "이미 해당 과목을 수강 중입니다.",
+                status_code = 409
+            )
+        
         #같은 과목의 분반 중복 수강 방지
         same_name_course = conn.execute(
             select(courses)
@@ -57,21 +73,7 @@ def create_schedule(schedule: ScheduleCreate):
                 status_code=409
             )
         
-        #같은 과목 코드 중복 수강 확인
-        existing = conn.execute(
-            select(schedules).where(
-                and_(
-                    schedules.c.user_id == schedule.user_id,
-                    schedules.c.course_code == schedule.course_code
-                )
-            )
-        ).fetchone()
-
-        if existing:
-            return error_response(
-                message = "이미 해당 과목을 수강 중입니다.",
-                status_code = 409
-            )
+        
         
         #시간대 중복 여부
         overlapping = conn.execute(
