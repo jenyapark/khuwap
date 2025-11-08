@@ -7,6 +7,7 @@ from exchange.models import exchange, exchange_requests
 from exchange.schemas import ExchangeCreate, ExchangeUpdate, ExchangeResponse, ExchangeRequestCreate, ExchangeRequestResponse
 from exchange.validators.request import validate_requests_creation, validate_request_acceptance
 from schedules.models import schedules
+from exchange.utils.schedule_swap import perform_course_swap
 
 router = APIRouter(prefix="/exchange/request", tags=["exchange-request"])
 
@@ -123,6 +124,34 @@ def get_sent_requests(user_id: str):
 @router.patch("/{request_uuid}/accept")
 def accept(request_uuid: str):
     with engine.connect() as conn:
+
+        request_row = conn.execute(
+            select(exchange_requests).where(exchange_requests.c.request_uuid == request_uuid)
+        ).mappings().first()
+    
+
+        exchange_post = conn.execute(
+            select(exchange).where(exchange.c.exchange_uuid == request_row["exchange_post_uuid"])
+        ).mappings().first()
+        accepter_id = exchange_post["author_id"]
+
+        is_valid, msg = validate_request_acceptance(request_uuid, accepter_id, conn)
+        if not is_valid:
+            return error_response(msg)
+        
+        requester_id = request_row["requester_id"]
+        desired_course = exchange_post["desired_course"]
+        current_course = exchange_post["current_course"]
+
+        perform_course_swap(
+            conn=conn,
+            requester_id=requester_id,
+            accepter_id=accepter_id,
+            desired_course=desired_course,
+            current_course=current_course,
+        )
+
+
         conn.execute(
             update(exchange_requests)
             .where(exchange_requests.c.request_uuid == request_uuid)

@@ -64,7 +64,7 @@ def valiate_post_creation(user_id: str, current_course: str, desired_course: str
     has_conflict = check_time_conflict(
         requester_schedules=[desired_course_info],
         accepter_schedules=user_schedules,
-        requester_excluded_course=None,
+        requester_excluded_course=desired_course,
         accepter_excluded_course=current_course
     )
 

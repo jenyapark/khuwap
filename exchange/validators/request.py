@@ -75,7 +75,7 @@ def validate_requests_creation(requester_id: str, exchange_uuid: str):
         current_course = target_post["current_course"]
         desired_course = target_post["desired_course"]
 
-        if any(s["course_code"] == target_post["desired_course"] for s in requester_schedules):
+        if any(s["course_code"] == target_post["current_course"] for s in requester_schedules):
             return False,"이미 수강 중인 과목입니다."
         
         desired_course = conn.execute(
@@ -132,7 +132,7 @@ def validate_request_acceptance(request_uuid: str, accepter_id: int, conn) -> di
         return False,"게시글 작성자만 해당 요청을 수락할 수 있습니다."
     
     #게시글 open 여부 확인
-    if exchange_post["status"] != "open":
+    if exchange_post["status"] != "pending":
         return False,"현재 수락할 수 없는 상태의 게시글입니다."
     
     #시간표 충돌 검증
@@ -145,6 +145,19 @@ def validate_request_acceptance(request_uuid: str, accepter_id: int, conn) -> di
     accepter_schedules = conn.execute(
         select(schedules).where(schedules.c.user_id == accepter_id)
     ).mappings().all()
+
+    course_codes = [s["course_code"] for s in requester_schedules + accepter_schedules]
+    courses_info = conn.execute(
+        select(courses).where(courses.c.course_code.in_(course_codes))
+    ).mappings().all()
+    course_map = {c["course_code"]: c for c in courses_info}
+
+    requester_schedules = [
+        dict(course_map[s["course_code"]]) for s in requester_schedules if s["course_code"] in course_map
+    ]
+    accepter_schedules = [
+        dict(course_map[s["course_code"]]) for s in accepter_schedules if s["course_code"] in course_map
+    ]
 
     has_conflict = check_time_conflict(
         requester_schedules=requester_schedules,
