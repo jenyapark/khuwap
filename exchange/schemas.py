@@ -6,7 +6,6 @@ class Exchange(BaseModel):
     author_id: str = Field(..., description = "게시글 작성자(user_id)")
     current_course: str = Field(..., description = "현재 수강 중인 과목 코드")
     desired_course: str = Field(..., description = "교환 희망 과목 코드")
-    status: Optional[str] = Field(default = "open", description = "게시글 상태")
     note: Optional[str] = Field(None, description = "추가 설명")
 
 #게시글 등록용

@@ -21,8 +21,6 @@ def is_conflict(a, b):
     a = normalize_row(a)
     b = normalize_row(b)
 
-    print("[DEBUG] a keys:", list(a.keys()))
-    print("[DEBUG] b keys:", list(b.keys()))
 
     same_day = a["day_of_week"] == b["day_of_week"]
     if not same_day:

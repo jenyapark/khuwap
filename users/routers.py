@@ -45,7 +45,7 @@ async def create_user(user: User):
 
 #특정 사용자 조회
 @router.get("/{user_id}")
-async def get_user_by_id(user_id: int):
+async def get_user_by_id(user_id: str):
     with engine.connect() as conn:
         result = conn.execute(
             select(users).where(users.c.user_id == user_id)
@@ -58,7 +58,7 @@ async def get_user_by_id(user_id: int):
             )
 
         return success_response(
-            data = dict(result._mapping),
+            data = jsonable_encoder(result._mapping),
             message = "사용자 조회 성공",
             status_code = 200
         )
@@ -84,12 +84,12 @@ async def update_user(user_id: str, user: UserCreate):
         conn.commit()
 
         return success_response(
-            data = user.dict(),
+            data = user.model_dump(),
             message = "사용자 정보가 성공적으로 수정되었습니다."
         )
 
 @router.delete("/{user_id}")
-async def delete_user(user_id: int):
+async def delete_user(user_id: str):
     with engine.connect() as conn:
         existing = conn.execute(
             select(users).where(users.c.user_id == user_id)

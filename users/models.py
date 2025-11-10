@@ -10,6 +10,7 @@ users = Table(
     Column("username", String, nullable=False),                       
     Column("email", String, unique=True, nullable=False),              
     Column("password", String, nullable=False),                         
-    Column("created_at", DateTime, default=datetime.utcnow),           
+    Column("created_at", DateTime, default=datetime.utcnow), 
+    Column("max_credit", Integer, nullable=False, default = 18)
 )
 

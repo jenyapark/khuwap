@@ -7,6 +7,7 @@ from schedules.models import schedules
 from schedules.schemas import ScheduleCreate
 from users.models import users
 from courses.models import courses
+from exchange.utils.credit_limit import check_credit_limit
 
 router = APIRouter(prefix="/schedules", tags=["schedules"])
 
@@ -98,6 +99,11 @@ def create_schedule(schedule: ScheduleCreate):
                 message = "이미 같은 시간대에 다른 과목이 등록되어 있습니다.",
                 status_code=409,
             )
+        
+        #최대 학점 초과 여부
+        is_valid, msg = check_credit_limit(conn, user_id = schedule.user_id, new_course_code=schedule.course_code)
+        if not is_valid:
+            return error_response(message=msg)
         
 
         conn.execute(insert(schedules).values(**jsonable_encoder(schedule)))

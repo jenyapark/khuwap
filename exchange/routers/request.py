@@ -8,8 +8,13 @@ from exchange.schemas import ExchangeCreate, ExchangeUpdate, ExchangeResponse, E
 from exchange.validators.request import validate_requests_creation, validate_request_acceptance
 from schedules.models import schedules
 from exchange.utils.schedule_swap import perform_course_swap
+from chat.models import chat_rooms
+from uuid import uuid4
+from datetime import datetime
+import requests
 
 router = APIRouter(prefix="/exchange/request", tags=["exchange-request"])
+CHAT_SERVICE_URL = "http://localhost:8001"
 
 #요청 생성
 @router.post("/")
@@ -29,7 +34,7 @@ def create_exchange_request(payload: ExchangeRequestCreate):
     with engine.connect() as conn:
 
         target_post = conn.execute(
-            select(exchange.c.post_id)
+            select(exchange.c.post_id, exchange.c.author_id)
             .where(exchange.c.exchange_uuid == payload.exchange_uuid)
         ).mappings().first()
 
@@ -54,10 +59,35 @@ def create_exchange_request(payload: ExchangeRequestCreate):
         )
 
         conn.commit()
+
+        
+        # ✅ chat-service 연동 (예외 없이 상태 코드로 처리)
+    response = requests.post(
+        f"{CHAT_SERVICE_URL}/chat/init",
+        json={
+            "request_uuid": created["request_uuid"],
+            "requester_id": payload.requester_id,
+            "receiver_id": target_post["author_id"],
+            "exchange_uuid": payload.exchange_uuid
+        }
+    )
+
+    if response.status_code != 201:
+        # chat-service 가 비정상 응답 보낸 경우
+        print(f"⚠️ chat-service 응답 오류 ({response.status_code}): {response.text}")
+        return error_response(
+            message="교환 요청은 생성되었지만, 채팅방 생성에 실패했습니다.",
+            status_code=502
+        )
+    else:
+        room_info = response.json()
+
+    print(f"✅ chat-service 연동 성공: {response.json()}")
     
     return success_response(
-        message = "교환 요청이 전송되었습니다.",
-        data = {"request_uuid": created["request_uuid"]},
+        message = "교환 요청이 전송되었습니다. (채팅방 생성 완료)",
+        data = {"request_uuid": created["request_uuid"],
+                "room_id": room_info},
         status_code=201,
         )
 
@@ -82,7 +112,7 @@ def delete_exchange_request(request_uuid: str):
         remaining_requests = conn.execute(
             select(exchange_requests)
             .where(
-                (exchange_requests.c.exchagne_post_uuid == exchange_post_uuid)
+                (exchange_requests.c.exchange_post_uuid == exchange_post_uuid)
                 & (exchange_requests.c.status == "pending")
             )
         ).mappings().all()
@@ -151,6 +181,21 @@ def accept(request_uuid: str):
             current_course=current_course,
         )
 
+        room_id = conn.execute(
+            select(chat_rooms.c.room_id)
+            .where(chat_rooms.c.request_uuid == request_uuid)
+        ).scalar_one_or_none()
+
+        if room_id:
+            try:
+                chat_response = requests.patch(f"http://localhost:8001/chat/rooms/{room_id}/deactivate")
+                if chat_response.status_code == 200:
+                    chat_status = "deactivated"
+                else:
+                    chat_status = f"error ({chat_response.status_code})"
+            except Exception as e:
+                chat_status = f"error ({e})"
+
 
         conn.execute(
             update(exchange_requests)
@@ -171,4 +216,11 @@ def accept(request_uuid: str):
     return success_response(
         message="교환 요청이 수락되었습니다.",
         status_code=200,
+        data={
+            "exchange_status": "completed",
+            "chat_room": {
+                "status": chat_status,
+                "room_id": room_id
+            }
+        },
     )

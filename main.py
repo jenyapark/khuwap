@@ -6,8 +6,11 @@ from users.routers import router as users_router
 from schedules.routers import router as schedules_router
 from exchange.routers.crud import router as exchange_router
 from exchange.routers.request import router as exchange_request_router
+from chat.routers import message, history
+import chat_test_router
+from fastapi.routing import APIRoute
 
-app = FastAPI()
+app = FastAPI(title="Core Service")
 
 @app.get("/healthz")
 async def health_check():
@@ -29,3 +32,5 @@ app.include_router(courses_router, prefix = "/courses", tags = ["courses"])
 app.include_router(schedules_router, prefix = "/schedules", tags = ["schedules"])
 app.include_router(exchange_router, prefix = "/exchange", tags = ["exchange"])
 app.include_router(exchange_request_router, prefix = "/exchange/request", tags = ["exchange-request"])
+
+app.include_router(chat_test_router.router, prefix="/chat-test", tags = ["Chat Test"])

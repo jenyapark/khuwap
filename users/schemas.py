@@ -7,6 +7,7 @@ class User(BaseModel):
     email: EmailStr
     password: str 
     firebase_uid: str | None = None
+    max_credit: int = 18
 
 class UserCreate(User):
     password: str 
