@@ -4,7 +4,8 @@ from sqlalchemy import select, insert, delete, update
 from common.db import engine
 from common.responses import success_response, error_response
 from users.models import users
-from users.schemas import User, UserCreate
+from users.schemas import User, UserCreate, UserLogin
+
 
 router = APIRouter(tags=["users"])
 
@@ -117,3 +118,37 @@ async def delete_user(user_id: str):
         return success_response(
             message = f"{user_id} 사용자가 성공적으로 삭제되었습니다."
         )
+    
+# 사용자 로그인
+@router.post("/login")
+def login_user(user: UserLogin):
+    with engine.connect() as conn:
+        # 이메일로 사용자 검색
+        existing_user = conn.execute(
+            select(users).where(users.c.email == user.email)
+        ).fetchone()
+
+        if not existing_user:
+            return error_response(
+                message="등록되지 않은 이메일입니다.",
+                status_code=401
+            )
+
+        # 비밀번호 일치 확인
+        if existing_user.password != user.password:
+            return error_response(
+                message="비밀번호가 올바르지 않습니다.",
+                status_code=401
+            )
+
+        # 로그인 성공 → 유저 데이터 반환
+        return success_response(
+            data={
+                "user_id": existing_user.user_id,
+                "username": existing_user.username,
+                "email": existing_user.email,
+            },
+            message="로그인 성공",
+            status_code=200
+        )
+
