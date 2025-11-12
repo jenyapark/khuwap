@@ -1,5 +1,5 @@
 from sqlalchemy import Table, Column, Integer, String, DateTime
-from datetime import datetime
+from datetime import datetime, timezone
 from common.db import metadata
 
 users = Table(
@@ -10,7 +10,7 @@ users = Table(
     Column("username", String, nullable=False),                       
     Column("email", String, unique=True, nullable=False),              
     Column("password", String, nullable=False),                         
-    Column("created_at", DateTime, default=datetime.utcnow), 
+    Column("created_at", DateTime, default=lambda: datetime.now(timezone.utc)), 
     Column("max_credit", Integer, nullable=False, default = 18)
 )
 

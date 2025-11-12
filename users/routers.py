@@ -6,7 +6,7 @@ from common.responses import success_response, error_response
 from users.models import users
 from users.schemas import User, UserCreate
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(tags=["users"])
 
 #전체 사용자 조회
 @router.get("/")
@@ -21,9 +21,19 @@ async def get_users():
         )
 
 #사용자 등록
-@router.post("/", status_code=status.HTTP_201_CREATED)
-async def create_user(user: User):
+@router.post("/register")
+def create_user(user: User):
     with engine.connect() as conn:
+        existing_user_id = conn.execute(
+            select(users).where(users.c.user_id == user.user_id)
+        ).fetchone()
+
+        if existing_user_id:
+            return error_response(
+                message = "이미 가입된 학번입니다.",
+                status_code = 400
+            )
+            
         existing = conn.execute(
             select(users).where(users.c.email == user.email)
         ).fetchone()
@@ -34,7 +44,7 @@ async def create_user(user: User):
                 status_code = 400
             )
 
-        conn.execute(insert(users).values(**user.dict()))
+        conn.execute(insert(users).values(**user.model_dump()))
         conn.commit()
 
         return success_response(

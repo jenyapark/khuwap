@@ -6,13 +6,13 @@ class User(BaseModel):
     username: str
     email: EmailStr
     password: str 
-    firebase_uid: str | None = None
-    max_credit: int = 18
+    max_credit: int
 
 class UserCreate(User):
     password: str 
 
 class UserResponse(User):
+    firebase_uid: str | None = None
     created_at: datetime
 
     class Config:

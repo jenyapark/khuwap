@@ -9,8 +9,16 @@ from exchange.routers.request import router as exchange_request_router
 from chat.routers import message, history
 import chat_test_router
 from fastapi.routing import APIRoute
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Core Service")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],          # 개발 중엔 모든 도메인 허용
+    allow_credentials=True,
+    allow_methods=["*"],          # 모든 HTTP 메서드 허용 
+    allow_headers=["*"],          # 모든 헤더 허용
+)
 
 @app.get("/healthz")
 async def health_check():
