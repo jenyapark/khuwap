@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'signup_screen.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,6 +17,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+
+  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
 
   Future<void> _loginUser() async {
     final url = Uri.parse('http://localhost:8000/users/login');
@@ -38,10 +42,17 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final body = jsonDecode(response.body);
+        final user = body["data"];
+
+        // 서버 응답에서 user 정보 저장
+        await secureStorage.write(key: "user_id", value: user["user_id"].toString());
+        await secureStorage.write(key: "username", value: user["username"]);
+        await secureStorage.write(key: "email", value: user["email"]);
+
         _showCustomDialog(
           context,
-          "로그인 성공!\n환영합니다 ${data['username']}님 😊",
+          "로그인 성공!\n환영합니다 ${user['username']}님",
           success: true,
         );
       } else if (response.statusCode == 401) {
@@ -102,8 +113,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () {
                   Navigator.pop(context);
                   if (success) {
-                    // TODO: 로그인 후 이동할 홈 화면으로 라우팅 예정
-                    // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomeScreen()));
+                    // 로그인 성공 후 홈 화면으로 이동
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const HomeScreen(),
+                      ),
+                    );
                   }
                 },
                 child: const Text(
@@ -174,7 +190,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 32),
 
-              // 이메일
               TextFormField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -182,7 +197,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16),
 
-              // 비밀번호
               TextFormField(
                 controller: passwordController,
                 obscureText: _obscurePassword,
@@ -205,7 +219,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 32),
 
-              // 로그인 버튼
               SizedBox(
                 width: double.infinity,
                 height: 52,
@@ -231,7 +244,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 24),
 
-              // 회원가입 안내
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

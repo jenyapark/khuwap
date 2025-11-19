@@ -8,39 +8,57 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
 
     const ivory = Color(0xFFFAF8F3);         // 전체 배경
-    const skyBlue = Color(0xFFCDEAF2);       // 카드 배경
-    const pointRed = Color(0xFFCC2831);      // 요청하기/포인트
-    const deepRed = Color(0xFF7A0E1D);       // 경희레드
+    const deepRed = Color(0xFF8B0000);       // 경희레드
     const deepBrown = Color(0xFF4A2A25);     // 텍스트 주색
 
     final List<Map<String, String>> dummyExchangeData = [
-      {
-        "ownedTitle": "고급자료구조와 알고리즘",
-        "ownedProfessor": "김상철",
-        "ownedDay": "월/수",
-        "ownedStart": "10:00",
-        "ownedEnd": "11:15",
+  {
+    // ----------------- OWNED -----------------
+    "ownedTitle": "고급자료구조와 알고리즘",
+    "ownedProfessor": "김상철",
+    "ownedDay": "월/수",
+    "ownedStart": "10:00",
+    "ownedEnd": "11:15",
+    "ownedCourseCode": "CSE301",
+    "ownedRoom": "B09",
 
-        "desiredTitle": "운영체제",
-        "desiredProfessor": "이은정",
-        "desiredDay": "화/목",
-        "desiredStart": "13:00",
-        "desiredEnd": "14:15",
-      },
-      {
-        "ownedTitle": "데이터베이스 시스템 설계",
-        "ownedProfessor": "박지훈",
-        "ownedDay": "화/목",
-        "ownedStart": "09:00",
-        "ownedEnd": "10:15",
+    // ----------------- DESIRED -----------------
+    "desiredTitle": "운영체제",
+    "desiredProfessor": "이은정",
+    "desiredDay": "화/목",
+    "desiredStart": "13:00",
+    "desiredEnd": "14:15",
+    "desiredCourseCode": "CSE202",
+    "desiredRoom": "공학관207",
 
-        "desiredTitle": "컴퓨터네트워크",
-        "desiredProfessor": "정소민",
-        "desiredDay": "월/수",
-        "desiredStart": "14:00",
-        "desiredEnd": "15:15",
-      },
-    ];
+    // ----------------- NOTE -----------------
+    "note": "시간이 딱 맞아서 바꾸고 싶어요!",
+  },
+
+  {
+    // ----------------- OWNED -----------------
+    "ownedTitle": "데이터베이스 시스템 설계",
+    "ownedProfessor": "박지훈",
+    "ownedDay": "화/목",
+    "ownedStart": "09:00",
+    "ownedEnd": "10:15",
+    "ownedCourseCode": "CSE305",
+    "ownedRoom": "신공학관302",
+
+    // ----------------- DESIRED -----------------
+    "desiredTitle": "컴퓨터네트워크",
+    "desiredProfessor": "정소민",
+    "desiredDay": "월/수",
+    "desiredStart": "14:00",
+    "desiredEnd": "15:15",
+    "desiredCourseCode": "CSE211",
+    "desiredRoom": "B12",
+
+    // ----------------- NOTE -----------------
+    "note": "과목 난이도 차이 때문에 바꾸고 싶습니다.",
+  },
+];
+
 
     return Scaffold(
       backgroundColor: ivory,
@@ -110,11 +128,16 @@ class HomeScreen extends StatelessWidget {
                               ownedDay: item["ownedDay"]!,
                               ownedStart: item["ownedStart"]!,
                               ownedEnd: item["ownedEnd"]!,
+                              ownedCourseCode: item["ownedCourseCode"]!,
+      ownedRoom: item["ownedRoom"]!,
                               desiredTitle: item["desiredTitle"]!,
                               desiredProfessor: item["desiredProfessor"]!,
                               desiredDay: item["desiredDay"]!,
                               desiredStart: item["desiredStart"]!,
                               desiredEnd: item["desiredEnd"]!,
+                              desiredCourseCode: item["desiredCourseCode"]!,
+      desiredRoom: item["desiredRoom"]!,
+                              note: item["note"] ?? "",
                             ),
                           ),
                         );
@@ -189,7 +212,7 @@ Stack(
     // 아래(윤곽선 역할)
     Icon(
       Icons.swap_horiz,
-      size: 44,             // 더 크게
+      size: 44,          
       color: Color(0xFF4A2A25),   // 윤곽선 색 (딥브라운 등)
       weight: 900,
     ),
@@ -197,7 +220,7 @@ Stack(
     // 위(본체)
     Icon(
       Icons.swap_horiz,
-      size: 40,             // 살짝 작게
+      size: 40,            
       color: Color(0xFF7A0E1D),   // 경희레드 (본색)
       weight: 900,
     ),

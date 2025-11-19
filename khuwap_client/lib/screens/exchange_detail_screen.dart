@@ -6,12 +6,19 @@ class ExchangeDetailScreen extends StatelessWidget {
   final String ownedDay;
   final String ownedStart;
   final String ownedEnd;
+  final String ownedCourseCode;
+  final String ownedRoom;
+
 
   final String desiredTitle;
   final String desiredProfessor;
   final String desiredDay;
   final String desiredStart;
   final String desiredEnd;
+  final String desiredCourseCode;
+  final String desiredRoom;
+
+  final String note;
 
   const ExchangeDetailScreen({
     super.key,
@@ -20,201 +27,276 @@ class ExchangeDetailScreen extends StatelessWidget {
     required this.ownedDay,
     required this.ownedStart,
     required this.ownedEnd,
+    required this.ownedCourseCode,
+    required this.ownedRoom,
     required this.desiredTitle,
     required this.desiredProfessor,
     required this.desiredDay,
     required this.desiredStart,
     required this.desiredEnd,
+    required this.desiredCourseCode,
+    required this.desiredRoom,
+    this.note = "",
   });
 
   @override
   Widget build(BuildContext context) {
-    const kyeongheeRed = Color(0xFFB5121B);
-    const background = Color(0xFF0F1824);
-    const cardBg = Color(0xFF1C2833);
+    const ivory = Color(0xFFFAF8F3);
+    const textBrown = Color(0xFF3E2A25);
+    const khured = Color(0xFF8B0000);
 
     return Scaffold(
-      backgroundColor: background,
+      backgroundColor: ivory,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: ivory,
         elevation: 0,
-        title: const Text(
-          "KHUWAP",
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: textBrown, size: 18),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Column(
+          children: [
+
+            // =================== OWNED CARD ===================
+            _buildSubjectDetailCard(
+              label: "owned",
+              courseCode: ownedCourseCode,
+              title: ownedTitle,
+              professor: ownedProfessor,
+              day: ownedDay,
+              start: ownedStart,
+              end: ownedEnd,
+              room: ownedRoom,
+              isRightAligned: false,
+            ),
+
+            const SizedBox(height: 20),
+
+            // ================== DESIRED CARD ==================
+            _buildSubjectDetailCard(
+              label: "desired",
+              courseCode: desiredCourseCode,
+              title: desiredTitle,
+              professor: desiredProfessor,
+              day: desiredDay,
+              start: desiredStart,
+              end: desiredEnd,
+              room: desiredRoom,
+              isRightAligned: false,
+            ),
+
+            const SizedBox(height: 20),
+
+            // ================== NOTE BOX ==================
+            _buildNoteBox(note),
+            const SizedBox(height: 20),
+
+            // ================== REQUEST BUTTON ==================
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: khured,
+                  minimumSize: const Size(0, 54),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () {},
+                child: const Text(
+                  "교환 요청",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildNoteBox(String note) {
+  const textBrown = Color(0xFF3E2A25);
+  const borderColor = Color(0xFFE2E2E2);
+
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: borderColor, width: 1.1),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "작성자 메모: ",
           style: TextStyle(
-            color: kyeongheeRed,
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: textBrown,
           ),
         ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: Icon(Icons.person_outline, color: Colors.white, size: 28),
-          ),
-        ],
-      ),
 
-      body: Center(
-        child: Container(
-          width: 360,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: cardBg,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // --------------------- TOP TAGS ---------------------
-              Row(
-                children: [
-                  _buildTag("desired"),
-                  const Spacer(),
-                  _buildTag("owned"),
-                ],
-              ),
-
-              const SizedBox(height: 14),
-
-              // ------------------ SUBJECT CARDS -------------------
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: _buildSubjectCard(
-                      title: desiredTitle,
-                      professor: desiredProfessor,
-                      day: desiredDay,
-                      start: desiredStart,
-                      end: desiredEnd,
-                      alignRight: false,
-                    ),
-                  ),
-                  const SizedBox(width: 18),
-                  Expanded(
-                    child: _buildSubjectCard(
-                      title: ownedTitle,
-                      professor: ownedProfessor,
-                      day: ownedDay,
-                      start: ownedStart,
-                      end: ownedEnd,
-                      alignRight: true,
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 26),
-
-              // ---------------- REQUEST BUTTON (FULL) --------------
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: kyeongheeRed,
-                    minimumSize: const Size(0, 48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  onPressed: () {},
-                  child: const Text(
-                    "요청하기",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // ---------------- SMALL BACK BUTTON -----------------
-              Align(
-                alignment: Alignment.centerRight,
-                child: SizedBox(
-                  width: 110,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white24,
-                      minimumSize: const Size(0, 40),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text(
-                      "뒤로가기",
-                      style: TextStyle(fontSize: 14, color: Colors.white),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+        // note 내용이 길어도 자동 줄바꿈
+        Expanded(
+          child: Text(
+            (note.isEmpty)
+                ? "작성자가 메모를 남기지 않았습니다."
+                : note,
+            style: TextStyle(
+              fontSize: 15,
+              height: 1.45,
+              color: textBrown.withOpacity(0.75),
+            ),
           ),
         ),
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
 
-  // ---------------------- TAGS ----------------------
-  Widget _buildTag(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 14),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Colors.white70,
-          fontWeight: FontWeight.w600,
-          fontSize: 13,
-        ),
-      ),
-    );
-  }
 
-  // ----------------- SUBJECT CARD -------------------
-  Widget _buildSubjectCard({
+  // ============== SUBJECT DETAIL CARD ==================
+  Widget _buildSubjectDetailCard({
+    required String label,
     required String title,
+    required String courseCode,
     required String professor,
     required String day,
     required String start,
     required String end,
-    required bool alignRight,
+    required String room,
+    required bool isRightAligned,
   }) {
-    return Column(
-      crossAxisAlignment:
-          alignRight ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          textAlign: alignRight ? TextAlign.right : TextAlign.left,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-            height: 1.15,
-          ),
+    const textBrown = Color(0xFF3E2A25);
+    const cardWhite = Color(0xFFFFFFFF);
+    const borderColor = Color(0xFFE2E2E2);
+    const khured = Color(0xFF7A0E1D);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      decoration: BoxDecoration(
+        color: cardWhite,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor, width: 1.2),
+      ),
+      child: Column(
+        crossAxisAlignment: isRightAligned
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
+        children: [
+          // ---------- LABEL ----------
+          Container(
+  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+  decoration: BoxDecoration(
+    color: khured.withOpacity(0.08),
+    borderRadius: BorderRadius.circular(6),
+    border: Border.all(
+      color: khured.withOpacity(0.25),
+      width: 1.0,
+    ),
+  ),
+  child: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      // owned / desired
+      Text(
+        label,
+        style: const TextStyle(
+          color: khured,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
         ),
-        const SizedBox(height: 8),
-        Text(
-          professor,
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
+      ),
+
+      const SizedBox(width: 4),
+
+      // 가운데 점 (·)
+      const Text(
+        "·",
+        style: TextStyle(
+          color: khured,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
         ),
-        const SizedBox(height: 4),
-        Text(
-          "$day  $start~$end",
-          style: const TextStyle(
-            color: Colors.white54,
-            fontSize: 13,
-          ),
+      ),
+
+      const SizedBox(width: 4),
+
+      // 학수번호
+      Text(
+        "[${courseCode}]",
+        style: const TextStyle(
+          color: khured,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
         ),
-      ],
+      
+        
+      ),
+    ],
+  ),
+),
+
+        
+      
+
+          const SizedBox(height: 14),
+
+          // ---------- TITLE ----------
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 260),
+            child: Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.w700,
+                color: textBrown,
+                height: 1.3,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // ---------- PROFESSOR ----------
+          Text(
+            professor,
+            style: TextStyle(
+              color: textBrown.withOpacity(0.75),
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+
+          const SizedBox(height: 4),
+
+          // ---------- TIME ----------
+          Text(
+            "$day   $start~$end($room)",
+            style: TextStyle(
+              color: textBrown.withOpacity(0.55),
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
