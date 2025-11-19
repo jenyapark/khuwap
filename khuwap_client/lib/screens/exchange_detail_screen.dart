@@ -8,6 +8,7 @@ class ExchangeDetailScreen extends StatelessWidget {
   final String ownedEnd;
   final String ownedCourseCode;
   final String ownedRoom;
+  final String ownedCredit;
 
 
   final String desiredTitle;
@@ -17,6 +18,7 @@ class ExchangeDetailScreen extends StatelessWidget {
   final String desiredEnd;
   final String desiredCourseCode;
   final String desiredRoom;
+  final String desiredCredit;
 
   final String note;
 
@@ -29,6 +31,7 @@ class ExchangeDetailScreen extends StatelessWidget {
     required this.ownedEnd,
     required this.ownedCourseCode,
     required this.ownedRoom,
+    required this.ownedCredit,
     required this.desiredTitle,
     required this.desiredProfessor,
     required this.desiredDay,
@@ -36,6 +39,7 @@ class ExchangeDetailScreen extends StatelessWidget {
     required this.desiredEnd,
     required this.desiredCourseCode,
     required this.desiredRoom,
+    required this.desiredCredit,
     this.note = "",
   });
 
@@ -72,6 +76,7 @@ class ExchangeDetailScreen extends StatelessWidget {
               start: ownedStart,
               end: ownedEnd,
               room: ownedRoom,
+              credit: ownedCredit,
               isRightAligned: false,
             ),
 
@@ -87,6 +92,7 @@ class ExchangeDetailScreen extends StatelessWidget {
               start: desiredStart,
               end: desiredEnd,
               room: desiredRoom,
+              credit: desiredCredit,
               isRightAligned: false,
             ),
 
@@ -179,6 +185,7 @@ class ExchangeDetailScreen extends StatelessWidget {
     required String start,
     required String end,
     required String room,
+    required String credit,
     required bool isRightAligned,
   }) {
     const textBrown = Color(0xFF3E2A25);
@@ -289,7 +296,7 @@ class ExchangeDetailScreen extends StatelessWidget {
 
           // ---------- TIME ----------
           Text(
-            "$day   $start~$end($room)",
+            "$day   $start~$end($room) $credit학점",
             style: TextStyle(
               color: textBrown.withOpacity(0.55),
               fontSize: 14,

@@ -21,6 +21,7 @@ class HomeScreen extends StatelessWidget {
     "ownedEnd": "11:15",
     "ownedCourseCode": "CSE301",
     "ownedRoom": "B09",
+    "ownedCredit": "3",
 
     // ----------------- DESIRED -----------------
     "desiredTitle": "운영체제",
@@ -30,6 +31,7 @@ class HomeScreen extends StatelessWidget {
     "desiredEnd": "14:15",
     "desiredCourseCode": "CSE202",
     "desiredRoom": "공학관207",
+    "desiredCredit" : "3",
 
     // ----------------- NOTE -----------------
     "note": "시간이 딱 맞아서 바꾸고 싶어요!",
@@ -130,6 +132,7 @@ class HomeScreen extends StatelessWidget {
                               ownedEnd: item["ownedEnd"]!,
                               ownedCourseCode: item["ownedCourseCode"]!,
       ownedRoom: item["ownedRoom"]!,
+      ownedCredit: item["ownedCredit"]!,
                               desiredTitle: item["desiredTitle"]!,
                               desiredProfessor: item["desiredProfessor"]!,
                               desiredDay: item["desiredDay"]!,
@@ -137,6 +140,7 @@ class HomeScreen extends StatelessWidget {
                               desiredEnd: item["desiredEnd"]!,
                               desiredCourseCode: item["desiredCourseCode"]!,
       desiredRoom: item["desiredRoom"]!,
+      desiredCredit: item["desiredCredit"]!,
                               note: item["note"] ?? "",
                             ),
                           ),

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Query
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select, insert, update, delete
 from common.db import engine
@@ -6,7 +6,7 @@ from common.responses import success_response, error_response
 from courses.models import courses
 from courses.schemas import Course, CourseCreate
 
-router = APIRouter(prefix="/courses", tags=["courses"])
+router = APIRouter( tags=["courses"])
 
 #전체 과목 조회
 @router.get("/")
@@ -18,6 +18,26 @@ def get_courses():
             data = jsonable_encoder(rows),
             message = "전체 과목 목록이 조회되었습니다."
         )
+    
+#학수번호로 과목 조회
+@router.get("/detail")
+def get_course_detail(course_code: str = Query(..., description="학수번호")):
+    with engine.connect() as conn:
+        result = conn.execute(
+            select(courses).where(courses.c.course_code == course_code)
+        ).mappings().first()
+
+    if not result:
+        return error_response(
+            message="해당 학수번호의 과목을 찾을 수 없습니다.",
+            status_code=404
+        )
+
+    return success_response(
+        data=jsonable_encoder(result),
+        message="과목 상세 조회 성공",
+        status_code=200
+    )
 
 #과목 등록
 @router.post("/")

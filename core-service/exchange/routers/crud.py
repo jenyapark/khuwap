@@ -7,7 +7,7 @@ from exchange.models import exchange, exchange_requests
 from exchange.schemas import ExchangeCreate, ExchangeUpdate, ExchangeResponse, ExchangeRequestCreate, ExchangeRequestResponse
 from exchange.validators.post import valiate_post_creation
 
-router = APIRouter(prefix="/exchange", tags = ["exchange"])
+router = APIRouter(tags = ["exchange"])
 
 #게시글 생성
 @router.post("/", response_model = ExchangeResponse)
@@ -39,7 +39,7 @@ def create_exchange_post(payload: ExchangeCreate):
         )
 
 #전체 게시글 조회
-@router.get("/", response_model = list[ExchangeResponse])
+@router.get("/list", response_model = list[ExchangeResponse])
 def get_all_exchange_posts():
     with engine.connect() as conn:
         result = conn.execute(select(exchange))
