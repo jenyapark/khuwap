@@ -9,7 +9,7 @@ from users.models import users
 from courses.models import courses
 from exchange.utils.credit_limit import check_credit_limit
 
-router = APIRouter(prefix="/schedules", tags=["schedules"])
+router = APIRouter(tags=["schedules"])
 
 #수강 등록
 @router.post("/")
@@ -116,7 +116,7 @@ def create_schedule(schedule: ScheduleCreate):
         )
 
 #사용자별 수강 내역 조회
-@router.get("/{user_id}", status_code = status.HTTP_200_OK)
+@router.get("/list/{user_id}", status_code = status.HTTP_200_OK)
 def get_user_schedules(user_id: str):
     with engine.connect() as conn:
         result = conn.execute(
