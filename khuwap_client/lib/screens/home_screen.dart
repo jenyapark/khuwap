@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:khuwap_client/screens/home_body.dart';
 import 'package:khuwap_client/screens/timetable_screen.dart';
+import 'package:khuwap_client/screens/mypost_screen.dart';
 import 'package:khuwap_client/services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -40,11 +41,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final screens = [
-      const HomeBody(),                     // ← 네가 만든 기존 UI
-      TimeTableScreen(userId: userId!),     // ← 시간표 스크린 연결
-      const Center(child: Text("Message")), // 구현 전이라 그냥 placeholder
+      const HomeBody(),                     
+      TimeTableScreen(userId: userId!),    
+      const Center(child: Text("Message")), 
       const Center(child: Text("Request")),
-      const Center(child: Text("My Post")),
+      MyPostScreen(userId: userId!)
     ];
 
     return Scaffold(

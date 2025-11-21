@@ -71,4 +71,70 @@ class ExchangeService {
 
     return result;
   }
+
+  // 내 글 목록 RAW 데이터
+static Future<List<dynamic>> fetchMyPostsRaw(String userId) async {
+  final res = await http.get(
+    Uri.parse("$baseUrl/exchange/mylist/$userId"),
+  );
+
+  if (res.statusCode != 200) return [];
+
+  final body = jsonDecode(res.body);
+
+   return body["data"] ?? [];
+}
+
+static Future<List<ExchangeItem>> fetchMyPosts(String userId) async {
+  final List<Map<String, dynamic>> rawList =
+      List<Map<String, dynamic>>.from(await fetchMyPostsRaw(userId));
+
+print("RAW LIST = $rawList");
+  List<ExchangeItem> items = [];
+
+  for (final raw in rawList) {
+    print("RAW ITEM = $raw");      
+
+    print("current_course = ${raw['current_course']}");   
+    print("desired_course = ${raw['desired_course']}");
+    final currentCode = raw['current_course'] as String;
+    final desiredCode = raw['desired_course'] as String;
+
+    // 과목 상세 정보 가져오기
+    final currentDetail =
+        await fetchCourseDetail(currentCode) as Map<String, dynamic>;
+    final desiredDetail =
+        await fetchCourseDetail(desiredCode) as Map<String, dynamic>;
+
+    items.add(
+      ExchangeItem(
+        ownedTitle: currentDetail['course_name'],         
+        ownedProfessor: currentDetail['professor'],
+        ownedDay: currentDetail['day_of_week'],            
+        ownedStart: currentDetail['start_time'],           
+        ownedEnd: currentDetail['end_time'],               
+        ownedCourseCode: currentDetail['course_code'],
+        ownedRoom: currentDetail['room'],
+        ownedCredit: currentDetail['credit'],
+
+        desiredTitle: desiredDetail['course_name'],        
+        desiredProfessor: desiredDetail['professor'],
+        desiredDay: desiredDetail['day_of_week'],        
+        desiredStart: desiredDetail['start_time'],         
+        desiredEnd: desiredDetail['end_time'],             
+        desiredCourseCode: desiredDetail['course_code'],
+        desiredRoom: desiredDetail['room'],
+        desiredCredit: desiredDetail['credit'],
+
+        note: raw['note'],
+      ),
+    );
+  }
+
+  return items;
+}
+
+
+
+  
 }
