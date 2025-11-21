@@ -108,3 +108,28 @@ def delete_exchange_post(exchange_uuid: str):
         conn.commit()
         
     return success_response(message = "게시글이 삭제되었습니다.", status_code=200)
+
+# 내가 작성한 게시글 목록 조회
+@router.get("/mylist/{user_id}")
+def get_my_exchange_posts(user_id: str):
+    with engine.connect() as conn:
+        result = conn.execute(
+            select(exchange)
+            .where(exchange.c.author_id == user_id)
+            .order_by(exchange.c.created_at.desc())
+        )
+        posts = result.mappings().all()
+
+    # 작성된 글이 하나도 없는 경우
+    if not posts:
+        return success_response(
+            data=[],
+            message="작성한 게시글이 없습니다.",
+            status_code=200
+        )
+
+    return success_response(
+        data=jsonable_encoder(posts),
+        message="내 교환글 목록 조회 성공",
+        status_code=200
+    )
