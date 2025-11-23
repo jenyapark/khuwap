@@ -22,7 +22,7 @@ def create_exchange_request(payload: ExchangeRequestCreate):
 
     is_valid, message = validate_requests_creation(
         requester_id=payload.requester_id,
-        exchange_uuid=payload.exchange_uuid
+        post_uuid=payload.post_uuid
     )
 
     if not is_valid:
@@ -35,14 +35,14 @@ def create_exchange_request(payload: ExchangeRequestCreate):
 
         target_post = conn.execute(
             select(exchange.c.post_id, exchange.c.author_id)
-            .where(exchange.c.exchange_uuid == payload.exchange_uuid)
+            .where(exchange.c.post_uuid == payload.post_uuid)
         ).mappings().first()
 
         #교환 요청 생성
         result = conn.execute(
             insert(exchange_requests).values(
                 exchange_post_id = target_post["post_id"],
-                exchange_post_uuid = payload.exchange_uuid,
+                post_uuid = payload.post_uuid,
                 requester_id = payload.requester_id,
                 status = "pending"
             )
@@ -54,7 +54,7 @@ def create_exchange_request(payload: ExchangeRequestCreate):
         #게시글 상태 업데이트
         conn.execute(
             update(exchange)
-            .where(exchange.c.exchange_uuid == payload.exchange_uuid)
+            .where(exchange.c.post_uuid == payload.post_uuid)
             .values(status="pending")
         )
 
@@ -68,7 +68,7 @@ def create_exchange_request(payload: ExchangeRequestCreate):
             "request_uuid": created["request_uuid"],
             "requester_id": payload.requester_id,
             "receiver_id": target_post["author_id"],
-            "exchange_uuid": payload.exchange_uuid
+            "post_uuid": payload.post_uuid
         }
     )
 
@@ -103,7 +103,7 @@ def delete_exchange_request(request_uuid: str):
         if not existing:
             return error_response(message="요청을 찾을 수 없습니다.", status_code=404)
         
-        exchange_post_uuid = existing["exchange_post_uuid"]
+        post_uuid = existing["post_uuid"]
 
         conn.execute(
             delete(exchange_requests).where(exchange_requests.c.request_uuid == request_uuid)
@@ -112,7 +112,7 @@ def delete_exchange_request(request_uuid: str):
         remaining_requests = conn.execute(
             select(exchange_requests)
             .where(
-                (exchange_requests.c.exchange_post_uuid == exchange_post_uuid)
+                (exchange_requests.c.post_uuid == post_uuid)
                 & (exchange_requests.c.status == "pending")
             )
         ).mappings().all()
@@ -120,7 +120,7 @@ def delete_exchange_request(request_uuid: str):
         if not remaining_requests:
             conn.execute(
                 update(exchange)
-                .where(exchange.c.exchange_uuid == exchange_post_uuid)
+                .where(exchange.c.post_uuid == post_uuid)
                 .values(status="open")
             )
         conn.commit()
@@ -161,7 +161,7 @@ def accept(request_uuid: str):
     
 
         exchange_post = conn.execute(
-            select(exchange).where(exchange.c.exchange_uuid == request_row["exchange_post_uuid"])
+            select(exchange).where(exchange.c.post_uuid == request_row["post_uuid"])
         ).mappings().first()
         accepter_id = exchange_post["author_id"]
 

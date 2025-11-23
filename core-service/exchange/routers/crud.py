@@ -52,11 +52,11 @@ def get_all_exchange_posts():
     )
 
 #특정 게시글 조회
-@router.get("/{exchange_uuid}", response_model = ExchangeResponse)
-def get_exchange_post(exchange_uuid: str):
+@router.get("/{post_uuid}", response_model = ExchangeResponse)
+def get_exchange_post(post_uuid: str):
     with engine.connect() as conn:
         result = conn.execute(
-            select(exchange).where(exchange.c.exchange_uuid == exchange_uuid)
+            select(exchange).where(exchange.c.post_uuid == post_uuid)
         )
         post = result.mappings().first()
         
@@ -71,23 +71,23 @@ def get_exchange_post(exchange_uuid: str):
     
 
 #게시글 수정
-@router.patch("/{exchange_uuid}", response_model = ExchangeResponse)
-def update_exchange_post(exchange_uuid: str, payload: ExchangeUpdate):
+@router.patch("/{post_uuid}", response_model = ExchangeResponse)
+def update_exchange_post(post_uuid: str, payload: ExchangeUpdate):
     update_data = payload.model_dump(exclude_unset=True)
     if not update_data:
         return error_response(message = "수정할 내용이 없습니다.", status_code = 400)
     
     with engine.connect() as conn:
-        existing = conn.execute(select(exchange).where(exchange.c.exchange_uuid == exchange_uuid)).mappings().first()
+        existing = conn.execute(select(exchange).where(exchange.c.post_uuid == post_uuid)).mappings().first()
         
         if not existing:
             return error_response(message = "게시글을 찾을 수 없습니다.", status_code = 404)
         conn.execute(
-                update(exchange).where(exchange.c.exchange_uuid == exchange_uuid).values(**update_data)
+                update(exchange).where(exchange.c.post_uuid == post_uuid).values(**update_data)
         )
         conn.commit()
 
-        updated = conn.execute(select(exchange).where(exchange.c.exchange_uuid == exchange_uuid)).mappings().first()
+        updated = conn.execute(select(exchange).where(exchange.c.post_uuid == post_uuid)).mappings().first()
 
     return success_response(
         data = jsonable_encoder(updated),
@@ -96,15 +96,15 @@ def update_exchange_post(exchange_uuid: str, payload: ExchangeUpdate):
     )
 
 #게시글 삭제
-@router.delete("/{exchange_uuid}")
-def delete_exchange_post(exchange_uuid: str):
+@router.delete("/{post_uuid}")
+def delete_exchange_post(post_uuid: str):
     with engine.connect() as conn:
-        existing = conn.execute(select(exchange).where(exchange.c.exchange_uuid == exchange_uuid)).mappings().first()
+        existing = conn.execute(select(exchange).where(exchange.c.post_uuid == post_uuid)).mappings().first()
 
         if not existing:
             return error_response(message = "게시글을 찾을 수 없습니다.", status_code = 404)
             
-        conn.execute(delete(exchange).where(exchange.c.exchange_uuid == exchange_uuid))
+        conn.execute(delete(exchange).where(exchange.c.post_uuid == post_uuid))
         conn.commit()
         
     return success_response(message = "게시글이 삭제되었습니다.", status_code=200)

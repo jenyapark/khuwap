@@ -6,12 +6,12 @@ from schedules.models import schedules
 from courses.models import courses
 from exchange.utils.schedule_conflict import check_time_conflict
 
-def validate_requests_creation(requester_id: str, exchange_uuid: str):
+def validate_requests_creation(requester_id: str, post_uuid: str):
     with engine.connect() as conn:
 
         #게시글 존재 여부 확인
         target_post = conn.execute(
-            select(exchange).where(exchange.c.exchange_uuid == exchange_uuid)
+            select(exchange).where(exchange.c.post_uuid == post_uuid)
         ).mappings().first()
 
         if not target_post:
@@ -41,7 +41,7 @@ def validate_requests_creation(requester_id: str, exchange_uuid: str):
         #중복 요청 방지
         existing_request = conn.execute(
             select(exchange_requests).where(
-                (exchange_requests.c.exchange_post_uuid == exchange_uuid)
+                (exchange_requests.c.post_uuid == post_uuid)
                 & (exchange_requests.c.requester_id == requester_id)
                 & (exchange_requests.c.status == "pending")
             )
@@ -121,7 +121,7 @@ def validate_request_acceptance(request_uuid: str, accepter_id: int, conn) -> di
     
     #게시글 존재 및 작성자 일치 여부 확인
     post_query = select(exchange).where(
-        exchange.c.exchange_uuid == request_row["exchange_post_uuid"]
+        exchange.c.post_uuid == request_row["post_uuid"]
     )
     exchange_post = conn.execute(post_query).mappings().first()
 
@@ -174,7 +174,7 @@ def validate_request_acceptance(request_uuid: str, accepter_id: int, conn) -> di
     
     #동일 게시글 중복 수락 방지
     accepted_exists_query = select(exchange_requests).where(
-        (exchange_requests.c.exchange_post_uuid == request_row["exchange_post_uuid"]) &
+        (exchange_requests.c.post_uuid == request_row["post_uuid"]) &
         (exchange_requests.c.status == "accepted")
     )
     already_accepted = conn.execute(accepted_exists_query).mappings().first()
