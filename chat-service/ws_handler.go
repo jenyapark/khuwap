@@ -76,28 +76,16 @@ func saveChatMessageToAPI(roomID, senderID, content string) error {
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 
-	// user_id
 	userID := r.URL.Query().Get("user_id")
-	if userID == "" {
-		http.Error(w, "missing user_id", http.StatusBadRequest)
-		return
-	}
-
-	// post_uuid
 	postUUID := r.URL.Query().Get("post_uuid")
-	if postUUID == "" {
-		http.Error(w, "missing post_uuid", http.StatusBadRequest)
-		return
-	}
-
-	// peer_id
 	peerID := r.URL.Query().Get("peer_id")
-	if peerID == "" {
-		http.Error(w, "missing peer_id", http.StatusBadRequest)
+
+	if userID == "" || postUUID == "" || peerID == "" {
+		http.Error(w, "missing parameters", http.StatusBadRequest)
 		return
 	}
 
-	// FastAPI에서 교환글 상태 확인
+	// 글 정보 조회 (status + author_id)
 	postInfo, err := getPostInfo(postUUID)
 	if err != nil {
 		http.Error(w, "failed to fetch post info", http.StatusInternalServerError)
@@ -114,6 +102,13 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	// 사용자 검증
 	if userID != authorID && userID != peerID {
 		http.Error(w, "forbidden: you are not a participant of this conversation", http.StatusForbidden)
+		return
+	}
+	var roomID string
+
+	roomID, err = getRoomFromAPI(postUUID, authorID, peerID)
+	if err != nil {
+		http.Error(w, "invalid chat room", http.StatusForbidden)
 		return
 	}
 
@@ -161,13 +156,6 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 		// 메시지를 worker로 전달
 		zmqPush.Send(string(msg), 0)
-
-		// 방 room_id 확보
-		roomID, err := getRoomFromAPI(postUUID, authorID, peerID)
-		if err != nil {
-			fmt.Println("Failed to get room_id:", err)
-			continue
-		}
 
 		// 메시지 저장 API 호출
 		if err := saveChatMessageToAPI(roomID, data.SenderID, data.Content); err != nil {

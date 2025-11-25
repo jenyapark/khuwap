@@ -96,7 +96,7 @@ bool get isCompleted => currentPostStatus == "completed";
         ChatMessageItem(
           senderId: item["sender_id"],
           content: item["content"],
-          createdAt: DateTime.parse(item["created_at"]),
+          createdAt: DateTime.parse(item["timestamp"]),
         ),
       );
     }
@@ -174,4 +174,5 @@ bool get isCompleted => currentPostStatus == "completed";
   void disposeChat() {
     _ws.disconnect();
   }
+
 }

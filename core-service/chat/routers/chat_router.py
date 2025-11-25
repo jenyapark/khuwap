@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import select, insert, delete, update, and_, or_
+
 from chat.schemas import SendMessageBody
+from chat.models import chat_messages, chat_rooms
 
 from common.db import get_db
 from chat.services.chat_room_service import (
@@ -14,7 +17,7 @@ from chat.services.chat_message_service import (
     get_messages_by_room,
 )
 
-router = APIRouter(tags=["Chat"])
+router = APIRouter(tags=["chat"])
 
 
 # 내가 참여한 채팅방 목록 조회
@@ -52,7 +55,7 @@ def get_room_messages(room_id: str, db: Session = Depends(get_db)):
                 "room_id": r.room_id,
                 "sender_id": r.sender_id,
                 "content": r.content,
-                "created_at": r.created_at.isoformat(),
+                "timestamp": r.timestamp.isoformat(),
             }
             for r in rows
         ]
@@ -62,6 +65,21 @@ def get_room_messages(room_id: str, db: Session = Depends(get_db)):
 # 메시지 저장 (Go WebSocket 서버가 호출할 수 있는 API)
 @router.post("/send")
 def send_chat_message(payload: SendMessageBody, db: Session = Depends(get_db)):
+    
+    row = db.execute(
+        select(chat_rooms)
+        .where(chat_rooms.c.room_id == payload.room_id)
+        .limit(1)
+    ).fetchone()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="room not found")
+
+    # 2) 권한 검증: sender_id ∈ {author_id, peer_id}
+    if payload.sender_id not in [row.author_id, row.peer_id]:
+        raise HTTPException(status_code=403, detail="not a participant")
+
+    
     save_message(
         db,
         room_id=payload.room_id,

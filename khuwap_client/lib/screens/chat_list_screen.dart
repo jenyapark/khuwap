@@ -14,16 +14,19 @@ class ChatListScreen extends StatefulWidget {
 }
 
 class _ChatListScreenState extends State<ChatListScreen> {
-  bool _loaded = false;
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
 
-    // 화면 진입 시 채팅방 목록 로딩
     Future.microtask(() async {
       await context.read<ChatProvider>().loadRooms(widget.userId);
-      setState(() => _loaded = true);
+
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+      });
     });
   }
 
@@ -36,7 +39,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         title: const Text("메시지 목록"),
       ),
 
-      body: !_loaded
+      body: _loading
           ? const Center(child: CircularProgressIndicator())
           : chat.rooms.isEmpty
               ? const Center(child: Text("채팅방이 없습니다."))
