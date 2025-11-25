@@ -28,3 +28,27 @@ chat_messages = Table(
     Column("content", Text, nullable=False),
     Column("timestamp", DateTime, server_default=func.now(), nullable=False),
 )
+
+chat_read_state = Table(
+    "chat_read_state",
+    metadata,
+    Column("id", String, primary_key=True, default=lambda: str(uuid.uuid4())),
+    Column(
+        "room_id",
+        String,
+        ForeignKey("chat_rooms.room_id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column(
+        "user_id",
+        String,
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column(
+        "last_read_at",
+        DateTime,
+        nullable=False,
+        server_default=func.now()   # 방 처음 접속 시점 = 읽음 처리
+    ),
+)

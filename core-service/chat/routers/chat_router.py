@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, insert, delete, update, and_, or_
 
 from chat.schemas import SendMessageBody
-from chat.models import chat_messages, chat_rooms
+from chat.models import chat_messages, chat_rooms, chat_read_state
 
 from common.db import get_db
 from chat.services.chat_room_service import (
@@ -17,6 +17,10 @@ from chat.services.chat_message_service import (
     get_messages_by_room,
 )
 
+from chat.services.read_state_service import (
+    get_unread_count,
+    update_read_state,
+)
 router = APIRouter(tags=["chat"])
 
 
@@ -25,27 +29,35 @@ router = APIRouter(tags=["chat"])
 def get_chat_rooms(user_id: str, db: Session = Depends(get_db)):
     rooms = get_my_chat_rooms(db, user_id)
 
-    # rows → JSON
+    data = []
+
+    for r in rooms:
+        unread = get_unread_count(
+            db,
+            room_id=r.room_id,
+            user_id=user_id
+        )
+
+        data.append({
+            "room_id": r.room_id,
+            "post_uuid": r.post_uuid,
+            "peer_id": r.peer_id,
+            "author_id": r.author_id,
+            "last_message": r.last_message,
+            "updated_at": r.updated_at.isoformat(),
+            "unread_count": unread,       # ← 추가됨
+        })
+
     return {
         "success": True,
-        "data": [
-            {
-                "room_id": r.room_id,
-                "post_uuid": r.post_uuid,
-                "peer_id": r.peer_id,
-                "author_id": r.author_id,
-                "last_message": r.last_message,
-                "updated_at": r.updated_at.isoformat(),
-            }
-            for r in rooms
-        ]
+        "data": data
     }
-
 
 # 특정 방의 메시지 리스트 조회
 @router.get("/messages")
-def get_room_messages(room_id: str, db: Session = Depends(get_db)):
+def get_room_messages(room_id: str, user_id: str, db: Session = Depends(get_db)):
     rows = get_messages_by_room(db, room_id=room_id)
+    update_read_state(db, room_id=room_id, user_id=user_id)
 
     return {
         "success": True,

@@ -7,4 +7,9 @@ class AuthService {
   static Future<String?> getUserId() async {
     return await _storage.read(key: "user_id");
   }
+
+  // 로그아웃
+  static Future<void> logout() async {
+    await _storage.delete(key: "user_id");
+  }
 }

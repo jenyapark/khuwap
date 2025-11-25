@@ -54,6 +54,9 @@ class ExchangeService {
       desiredRoom: desired["room"],
       desiredCredit: desired["credit"],
       note: raw["note"],
+      postUUID: raw['post_uuid'],
+      authorId: raw['author_id'],
+  
     );
   }
 
@@ -127,12 +130,49 @@ print("RAW LIST = $rawList");
         desiredCredit: desiredDetail['credit'],
 
         note: raw['note'],
+
+        postUUID: raw['post_uuid'],
+        authorId: raw['author_id'],
+
       ),
     );
   }
 
   return items;
 }
+
+String buildChatRoomTitle(ExchangeItem post) {
+  if (post.ownedTitle.isEmpty || post.desiredTitle.isEmpty) {
+    return "과목 정보 없음";
+  }
+  return "${post.ownedTitle} ↔ ${post.desiredTitle}";
+}
+
+// 특정 교환글 RAW 조회
+static Future<Map<String, dynamic>?> fetchPostRaw(String postUUID) async {
+  final url = Uri.parse("http://localhost:8000/exchange/$postUUID");
+
+  final res = await http.get(url);
+
+  if (res.statusCode != 200) {
+    print("Failed to load exchange post raw: ${res.body}");
+    return null;
+  }
+
+  final data = jsonDecode(res.body);
+  return data["data"]; // current_course / desired_course 포함된 RAW 데이터
+}
+
+static Future<String?> fetchAuthorId(String postUUID) async {
+  final url = Uri.parse("http://localhost:8000/exchange/post/$postUUID");
+  final res = await http.get(url);
+
+  if (res.statusCode != 200) return null;
+
+  final data = jsonDecode(res.body);
+  return data["data"]["author_id"];
+}
+
 
 
 

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:khuwap_client/models/exchange_item.dart';
 import '../services/exchange_service.dart';
+import '../services/auth_service.dart';
 import 'exchange_detail_screen.dart';
-import '../widgets/exchange_card.dart';   // ← 이거 있어야 함
+import '../widgets/exchange_card.dart'; 
 
 class HomeBody extends StatelessWidget {
   const HomeBody({super.key});
@@ -35,7 +36,20 @@ class HomeBody extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  Icon(Icons.person_outline, color: deepBrown, size: 30),
+                  GestureDetector(
+      onTap: () async {
+        await AuthService.logout();
+
+        if (!context.mounted) return;
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          "/login",
+          (route) => false,
+        );
+      },
+      child: Icon(Icons.person_outline, color: deepBrown, size: 30),
+    ),
+  
                 ],
               ),
 
@@ -101,12 +115,14 @@ class HomeBody extends StatelessWidget {
                                   desiredRoom: item.desiredRoom,
                                   desiredCredit: item.desiredCredit.toString(),
                                   note: item.note,
+                                  postUUID: item.postUUID,
+                                  authorId: item.authorId,
                                 ),
                               ),
                             );
                           },
 
-                          child: buildExchangeCard(item: item)
+                          child: buildExchangeCard(item: item, context: context)
 );
                       },
                     );

@@ -6,14 +6,14 @@ import (
 	"github.com/pebbe/zmq4"
 )
 
-func startWorker() {
+func main() {
 	pull, _ := zmq4.NewSocket(zmq4.PULL)
 	pull.Connect("tcp://localhost:5555")
 
 	push, _ := zmq4.NewSocket(zmq4.PUSH)
 	push.Connect("tcp://localhost:5556")
 
-	fmt.Println("Worker started... waiting for messages")
+	fmt.Println("Worker started...")
 
 	for {
 		msg, err := pull.Recv(0)
@@ -22,7 +22,7 @@ func startWorker() {
 			continue
 		}
 
-		// ai
+		// AI
 
 		push.Send(msg, 0)
 	}

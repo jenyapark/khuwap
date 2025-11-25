@@ -19,6 +19,10 @@ class ExchangeItem {
 
   final String note;
 
+  final String postUUID;
+  final String authorId;
+
+
   ExchangeItem({
     required this.ownedTitle,
     required this.ownedProfessor,
@@ -37,5 +41,8 @@ class ExchangeItem {
     required this.desiredRoom,
     required this.desiredCredit,
     required this.note,
+    required this.postUUID,
+    required this.authorId,
+
   });
 }

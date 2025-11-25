@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:khuwap_client/models/chat_room_item.dart';
+import 'package:khuwap_client/screens/chat_screen.dart';
+import '../services/auth_service.dart';
 
 class ExchangeDetailScreen extends StatelessWidget {
   final String ownedTitle;
@@ -22,6 +25,9 @@ class ExchangeDetailScreen extends StatelessWidget {
 
   final String note;
 
+  final String authorId;
+  final String postUUID;
+
   const ExchangeDetailScreen({
     super.key,
     required this.ownedTitle,
@@ -41,6 +47,9 @@ class ExchangeDetailScreen extends StatelessWidget {
     required this.desiredRoom,
     required this.desiredCredit,
     this.note = "",
+    required this.authorId,
+    required this.postUUID,
+
   });
 
   @override
@@ -126,6 +135,59 @@ class ExchangeDetailScreen extends StatelessWidget {
             ),
 
             const SizedBox(height: 20),
+
+            // ================== CHAT BUTTON ==================
+FutureBuilder<String?>(
+  future: AuthService.getUserId(),
+  builder: (context, snap) {
+    if (!snap.hasData) return const SizedBox.shrink();
+
+    final myId = snap.data!;
+
+    final isMine = (myId == authorId);
+
+    if (isMine) {
+      return const SizedBox.shrink(); // 내 글이면 버튼 숨김
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF8B0000),
+          minimumSize: const Size(0, 54),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChatScreen(
+                roomId: "-1",
+                userId: myId,
+                postUUID: postUUID,
+                peerId: authorId,
+                postTitle: "${ownedTitle} ↔ ${desiredTitle}",
+              ),
+            ),
+          );
+        },
+        child: const Text(
+          "대화하기",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  },
+),
+
+            
           ],
         ),
       ),

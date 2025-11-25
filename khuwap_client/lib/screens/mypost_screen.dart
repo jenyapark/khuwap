@@ -62,13 +62,17 @@ class MyPostScreen extends StatelessWidget {
                                   desiredRoom: item.desiredRoom,
                                   desiredCredit: item.desiredCredit.toString(),
                                   note: item.note,
+                                  postUUID: item.postUUID,
+                                  authorId: item.authorId,
                                 ),
                     ),
                   );
                 },
                 child: buildExchangeCard(
-                  item: item,
-                ),
+      item: item,
+      context: context,
+    ),
+
               ),
             );
           },

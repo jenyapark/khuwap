@@ -10,22 +10,36 @@ class ChatWebSocketService {
     required String peerId,
     required void Function(Map<String, dynamic>) onMessage,
   }) {
-    final url =
-        "ws://localhost:8080/ws?user_id=$userId&post_uuid=$postUUID&peer_id=$peerId";
 
-    _channel = WebSocketChannel.connect(Uri.parse(url));
+    final wsUrl = Uri(
+      scheme: "ws",
+      host: "localhost", // ← 네 PC 로컬 IP 직접 넣기
+      port: 8080,
+      path: "/ws",
+      queryParameters: {
+        "user_id": userId,
+        "post_uuid": postUUID,
+        "peer_id": peerId,
+      },
+    );
+
+    print("WS CONNECT URI => $wsUrl");
+
+    _channel = WebSocketChannel.connect(wsUrl);
 
     _channel!.stream.listen(
       (event) {
-        try {
-          final data = jsonDecode(event);
-          if (data is Map<String, dynamic>) {
-            onMessage(data);
-          } else {
-            print("Invalid WS format: not a map");
+        if (event is String && event.trim().startsWith("{")) {
+          try {
+            final data = jsonDecode(event);
+            if (data is Map<String, dynamic>) {
+              onMessage(data);
+            }
+          } catch (e) {
+            print("WS JSON decode error: $e");
           }
-        } catch (e) {
-          print("WS message decode error: $e");
+        } else {
+          print("WS non-JSON: $event");
         }
       },
       onError: (err) {
@@ -49,7 +63,6 @@ class ChatWebSocketService {
       "peer_id": peerId,
       "content": content,
     };
-
     _channel?.sink.add(jsonEncode(msg));
   }
 
@@ -58,3 +71,4 @@ class ChatWebSocketService {
     _channel = null;
   }
 }
+
