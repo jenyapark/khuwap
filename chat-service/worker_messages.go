@@ -22,7 +22,7 @@ func handleWorkerMessages() {
 			continue
 		}
 
-		convID := fmt.Sprintf("%s:%d", data.PostUUID, data.PeerID)
+		convID := fmt.Sprintf("%s:%s", data.PostUUID, data.PeerID)
 		room := rooms[convID]
 
 		if room == nil {

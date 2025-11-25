@@ -21,7 +21,7 @@ func ensureRoom(convID string) {
 func joinRoom(convID string, userID string, conn *websocket.Conn) {
 	ensureRoom(convID)
 	rooms[convID][userID] = conn
-	fmt.Printf("User %d joined room %s\n", userID, convID)
+	fmt.Printf("User %s joined room %s\n", userID, convID)
 }
 
 // 방 퇴장
@@ -30,7 +30,7 @@ func leaveRoom(convID string, userID string) {
 		return
 	}
 	delete(rooms[convID], userID)
-	fmt.Printf("User %d left room %s\n", userID, convID)
+	fmt.Printf("User %s left room %s\n", userID, convID)
 }
 
 // 방 가져오기

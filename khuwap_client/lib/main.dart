@@ -3,31 +3,36 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
 
+import 'providers/chat_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
-import 'providers/chat_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Web은 자동 로그인 비활성화 → 바로 LoginScreen 띄우기
-  if (kIsWeb) {
-    runApp(const MyApp(startScreen: LoginScreen()));
-    return;
-  }
+  Widget startScreen;
 
-  // 모바일은 secureStorage로 자동 로그인 사용
-  const storage = FlutterSecureStorage();
-  final userId = await storage.read(key: "user_id");
+  if (kIsWeb) {
+    // 웹에서는 자동로그인 사용 불가
+    startScreen = const LoginScreen();
+  } else {
+    // 모바일: secureStorage 기반 자동 로그인
+    const storage = FlutterSecureStorage();
+    final userId = await storage.read(key: "user_id");
+
+    if (userId != null) {
+      startScreen = const HomeScreen();
+    } else {
+      startScreen = const LoginScreen();
+    }
+  }
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ChatProvider()),   // 🔥 등록
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
-      child: MyApp(
-        startScreen: userId != null ? const HomeScreen() : const LoginScreen(),
-      ),
+      child: MyApp(startScreen: startScreen),
     ),
   );
 }
@@ -46,8 +51,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
-      home: startScreen, 
+      home: startScreen,
     );
   }
 }
-

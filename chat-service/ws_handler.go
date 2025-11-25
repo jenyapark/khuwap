@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,6 +11,67 @@ import (
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
+}
+
+// FastAPI /chat/room/create 호출해서 room_id 확보
+func getRoomFromAPI(postUUID, authorID, peerID string) (string, error) {
+	url := fmt.Sprintf(
+		"http://localhost:8000/chat/room/create?post_uuid=%s&author_id=%s&peer_id=%s",
+		postUUID,
+		authorID,
+		peerID,
+	)
+
+	resp, err := http.Post(url, "application/json", nil)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var out struct {
+		Success  bool   `json:"success"`
+		RoomID   string `json:"room_id"`
+		PostUUID string `json:"post_uuid"`
+		PeerID   string `json:"peer_id"`
+		AuthorID string `json:"author_id"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		return "", err
+	}
+
+	if !out.Success {
+		return "", fmt.Errorf("backend returned success=false")
+	}
+
+	return out.RoomID, nil
+}
+
+// FastAPI /chat/send 호출해서 메시지 저장
+func saveChatMessageToAPI(roomID, senderID, content string) error {
+	payload := map[string]string{
+		"room_id":   roomID,
+		"sender_id": senderID,
+		"content":   content,
+	}
+
+	body, _ := json.Marshal(payload)
+
+	resp, err := http.Post(
+		"http://localhost:8000/chat/send",
+		"application/json",
+		bytes.NewBuffer(body),
+	)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("FastAPI returned %s", resp.Status)
+	}
+
+	return nil
 }
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +97,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 교환글 상태 & 작성자 조회
+	// FastAPI에서 교환글 상태 확인
 	postInfo, err := getPostInfo(postUUID)
 	if err != nil {
 		http.Error(w, "failed to fetch post info", http.StatusInternalServerError)
@@ -49,14 +111,14 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 	authorID := postInfo.AuthorID
 
-	// 접속 권한: userID는 반드시 authorID 또는 peerID 둘 중 하나여야 함
+	// 사용자 검증
 	if userID != authorID && userID != peerID {
 		http.Error(w, "forbidden: you are not a participant of this conversation", http.StatusForbidden)
 		return
 	}
 
 	// convID 생성
-	convID := fmt.Sprintf("%s:%d", postUUID, peerID)
+	convID := fmt.Sprintf("%s:%s", postUUID, peerID)
 
 	// 웹소켓 업그레이드
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -79,7 +141,6 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// 메시지 구조 검사
 		var data struct {
 			SenderID string `json:"sender_id"`
 			PostUUID string `json:"post_uuid"`
@@ -92,13 +153,25 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		// URL과 JSON이 일치하는지 검사
+		// URL 파라미터와 JSON 검증
 		if data.PostUUID != postUUID || data.PeerID != peerID || data.SenderID != userID {
 			fmt.Println("Payload mismatch → ignore")
 			continue
 		}
 
-		// 메시지 워커에게 전달 & (ai)
+		// 메시지를 worker로 전달
 		zmqPush.Send(string(msg), 0)
+
+		// 방 room_id 확보
+		roomID, err := getRoomFromAPI(postUUID, authorID, peerID)
+		if err != nil {
+			fmt.Println("Failed to get room_id:", err)
+			continue
+		}
+
+		// 메시지 저장 API 호출
+		if err := saveChatMessageToAPI(roomID, data.SenderID, data.Content); err != nil {
+			fmt.Println("Failed to save message:", err)
+		}
 	}
 }
