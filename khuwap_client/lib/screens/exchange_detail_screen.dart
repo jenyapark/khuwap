@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:khuwap_client/models/chat_room_item.dart';
 import 'package:khuwap_client/screens/chat_screen.dart';
 import '../services/auth_service.dart';
+import 'package:provider/provider.dart'; 
+import '../providers/chat_provider.dart';
 
 class ExchangeDetailScreen extends StatelessWidget {
   final String ownedTitle;
@@ -160,19 +162,35 @@ FutureBuilder<String?>(
             borderRadius: BorderRadius.circular(10),
           ),
         ),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChatScreen(
-                roomId: "-1",
-                userId: myId,
-                postUUID: postUUID,
-                peerId: authorId,
-                postTitle: "${ownedTitle} ↔ ${desiredTitle}",
-              ),
-            ),
-          );
+        onPressed: () async {
+          final chatProvider = context.read<ChatProvider>();
+          try {
+    final String actualRoomId = await chatProvider.createChatRoom(
+      postUUID: postUUID,
+      authorId: authorId,
+      peerId: myId, 
+    );
+
+    if (actualRoomId != null && actualRoomId != "-1") {
+      await chatProvider.loadRooms(myId);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            roomId: actualRoomId, 
+            userId: myId,
+            postUUID: postUUID,
+            peerId: authorId, 
+            postTitle: "${ownedTitle} ↔ ${desiredTitle}",
+          ),
+        ),
+      );
+    } else {
+      print(">>> 방 생성 API가 유효하지 않은 ID를 반환했습니다.");
+    }
+  } catch (e) {
+    print(">>> 방 생성 중 오류 발생: $e");
+  }
         },
         child: const Text(
           "대화하기",

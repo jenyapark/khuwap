@@ -22,14 +22,15 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   void initState() {
     super.initState();
+    final provider = context.read<ChatProvider>();
 
-    Future.microtask(() async {
-      await context.read<ChatProvider>().loadRooms(widget.userId);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+          await provider.loadRooms(widget.userId); 
 
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-      });
+        if (!mounted) return;
+        setState(() {
+            _loading = false;
+        });
     });
   }
 
@@ -37,10 +38,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_cleared) {
-      context.read<ChatProvider>().updateOpenedRoom(null);
-      _cleared = true;
-
-      print(">>> LIST SCREEN: openedRoomId cleared");   // 디버그용
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+            context.read<ChatProvider>().updateOpenedRoom(null);
+            
+           _cleared = true; 
+            
+            print(">>> LIST SCREEN: openedRoomId cleared (PostFrameCallback)");   // 디버그용
+        });
     }
   }
 
@@ -92,29 +96,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
     child: InkWell(
                       onTap: () async {
   final chat = context.read<ChatProvider>();
-  final url = Uri.parse(
-    "http://localhost:8000/chat/room/create"
-    "?post_uuid=${room.postUUID}"
-    "&author_id=${widget.userId}"
-    "&peer_id=${room.peerIdFromApi}"
-  );
-
-  final res = await http.post(url);
-
-  if (res.statusCode != 200) {
-    print("방 생성 실패: ${res.body}");
-    return;
-  }
-
-  final data = jsonDecode(res.body);
-  final realRoomId = data["room_id"];
+  final existingRoomId = room.roomId; 
 
   // 화면 이동
   Navigator.push(
     context,
     MaterialPageRoute(
       builder: (_) => ChatScreen(
-        roomId: realRoomId,
+        roomId: existingRoomId,
         userId: widget.userId,
         postUUID: room.postUUID,
         peerId: room.peerId,

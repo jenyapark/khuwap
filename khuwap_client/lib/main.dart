@@ -37,10 +37,41 @@ Future<void> main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final Widget startScreen;
 
   const MyApp({super.key, required this.startScreen});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+
+  class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // 앱 라이프사이클 상태 변화 감지
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      try {
+        Provider.of<ChatProvider>(context, listen: false).disposeChat();
+        print(">>> App Lifecycle: WebSocket disconnected cleanly.");
+      } catch (e) {
+        print("Lifecycle dispose error: $e");
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,8 +82,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
-      home: startScreen,
-
+      home: widget.startScreen, 
       routes: {
         "/login": (context) => const LoginScreen(),
         "/home": (context) => const HomeScreen(),

@@ -6,8 +6,6 @@ class ChatWebSocketService {
 
   void connect({
     required String userId,
-    required String postUUID,
-    required String peerId,
     required void Function(Map<String, dynamic>) onMessage,
   }) {
 
@@ -18,8 +16,6 @@ class ChatWebSocketService {
       path: "/ws",
       queryParameters: {
         "user_id": userId,
-        "post_uuid": postUUID,
-        "peer_id": peerId,
       },
     );
 
@@ -54,12 +50,14 @@ class ChatWebSocketService {
   void sendMessage({
     required String senderId,
     required String postUUID,
+    required String roomId,
     required String peerId,
     required String content,
   }) {
     final msg = {
       "sender_id": senderId,
       "post_uuid": postUUID,
+      "room_id" : roomId,
       "peer_id": peerId,
       "content": content,
     };

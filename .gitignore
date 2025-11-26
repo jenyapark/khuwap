@@ -1,0 +1,20 @@
+# Rust build
+worker/filter/target/
+
+# Python venv
+core-service/venv/
+
+# macOS
+.DS_Store
+
+# Go build output
+*.exe
+*.out
+*.o
+bin/
+
+# Flutter
+build/
+.dart_tool/
+.packages
+pubspec.lock

@@ -5,6 +5,7 @@ import '../models/chat_message_item.dart';
 import '../models/chat_room_item.dart';
 import '../services/chat_ws_service.dart';
 import '../services/exchange_service.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 class ChatProvider extends ChangeNotifier {
   final ChatWebSocketService _ws = ChatWebSocketService();
@@ -16,6 +17,13 @@ class ChatProvider extends ChangeNotifier {
   String? peerId;
   String? currentPostStatus;
   String? openedRoomId;
+  WebSocketChannel? _wsChannel;
+
+  bool _isConnected = false;
+  
+  bool get isConnected => _isConnected;
+
+
 
   Future<void> loadPostStatus(String postUUID) async {
   final url = Uri.parse("http://localhost:8000/exchange/$postUUID");
@@ -110,6 +118,7 @@ bool get isCompleted => currentPostStatus == "completed";
 
   void updateOpenedRoom(String? roomId) {
   openedRoomId = roomId;
+  notifyListeners();
 }
 
 void resetUnreadCount(String roomId) {
@@ -130,6 +139,7 @@ void resetUnreadCount(String roomId) {
     print("userId is null in loadMessages()");
     return;
    }
+   try {
     final url = Uri.parse("http://localhost:8000/chat/messages?room_id=$roomId&user_id=$userId");
 
     final res = await http.get(url);
@@ -154,6 +164,9 @@ void resetUnreadCount(String roomId) {
     }
 
     notifyListeners();
+  } catch (e) {
+    print(">>> [ChatProvider] Message Parsing Error: $e");
+  }
   }
 
 
@@ -168,10 +181,13 @@ void resetUnreadCount(String roomId) {
     this.postUUID = postUUID;
     this.peerId = peerId;
 
+    if (_isConnected) {
+      print("WS already connected. Skipping connection attempt.");
+      return; // 🚨 이미 연결되어 있으면 재연결하지 않음
+    }
+
     _ws.connect(
       userId: userId,
-      postUUID: postUUID,
-      peerId: peerId,
       onMessage: _handleMessage,
     );
   }
@@ -181,46 +197,40 @@ void resetUnreadCount(String roomId) {
 
 void _handleMessage(Map<String, dynamic> data) {
   final String sender = data["sender_id"];
-  final String peer   = data["peer_id"];
-  final String post   = data["post_uuid"];
-  final String? me    = userId;
+  final String receivedRoomId = data["room_id"];
 
-  messages.add(
-    ChatMessageItem(
-      senderId: sender,
-      content: data["content"],
-      createdAt: DateTime.now(),
-    ),
-  );
-
-  if (me == null) {
-    notifyListeners();
+  if (userId == null) {
+    print("WARNING: Message received before userId was initialized.");
     return;
   }
 
-  final String other = (sender == me) ? peer : sender;
+  final newMessage = ChatMessageItem(
+        senderId: sender,
+        content: data["content"],
+        createdAt: DateTime.now(),
+    );
 
-  ChatRoomItem? targetRoom;
-  for (final room in rooms) {
-    if (room.postUUID == post && room.peerId == other) {
-      targetRoom = room;
-      break;
+    if (receivedRoomId == openedRoomId) {
+        // 현재 채팅 화면에 메시지 추가 및 갱신
+        messages.add(newMessage);
     }
-  }
 
-  if (targetRoom == null) {
-    print("⚠ 메시지 도착했지만 해당 방을 찾지 못함. (post=$post, other=$other)");
-    notifyListeners();
-    return;
-  }
+    ChatRoomItem? targetRoom;
+    for (final room in rooms) {
+      if (room.roomId == receivedRoomId) { 
+        targetRoom = room;
+        break;
+      }
+    }
 
-  print("MATCHED ROOM: ${targetRoom.roomId}, other=$other");
-
-  // 마지막 메시지 업데이트만 수행
-  targetRoom.lastMessage = data["content"];
-
-  // 리스트 업데이트
-  rooms = List.from(rooms);
+    if (targetRoom != null) {
+      print("MATCHED ROOM: ${targetRoom.roomId}");
+        targetRoom.lastMessage = data["content"];
+        if (receivedRoomId != openedRoomId) {
+            targetRoom.unreadCount++;
+        }
+        rooms = List.from(rooms); 
+    }
   notifyListeners();
 }
 
@@ -228,18 +238,38 @@ void _handleMessage(Map<String, dynamic> data) {
 
 
   void send(String text) {
-    if (userId == null || postUUID == null || peerId == null) return;
+    if (userId == null || openedRoomId == null) {
+      print(">>> [ChatProvider.send] ERROR: userId or openedRoomId is null. Aborting.");
+        return;
+    }
+    ChatRoomItem? currentRoom;
+    try {
+        currentRoom = rooms.firstWhere(
+          (room) => room.roomId == openedRoomId,
+        );
+    } catch (e) {
+        // rooms 리스트에서 해당 방 ID를 찾지 못했을 때 'Bad state: No element' 오류 발생
+        print(">>> [ChatProvider.send] ERROR: Room ID $openedRoomId not found in rooms list. Aborting message send.");
+        // 사용자에게 메시지 표시 등 추가 조치 가능
+        return; 
+    }
 
     _ws.sendMessage(
       senderId: userId!,
-      postUUID: postUUID!,
-      peerId: peerId!,
+      postUUID: currentRoom.postUUID,
+      roomId: currentRoom.roomId,     
+      peerId: currentRoom.peerId,     
       content: text,
     );
   }
 
   void disposeChat() {
-    _ws.disconnect();
+    if (_wsChannel != null) {
+      _wsChannel!.sink.close();
+      _wsChannel = null;
+      _isConnected = false;
+      print("WS disconnected manually.");
+    }
   }
 
   void addOrUpdateRoom(ChatRoomItem room) {
@@ -253,6 +283,67 @@ void _handleMessage(Map<String, dynamic> data) {
 
   notifyListeners();
 }
+
+Future<String> createChatRoom({
+        required String postUUID,
+        required String authorId,
+        required String peerId,
+    }) async {
+        // 1. API 엔드포인트 및 URL 설정
+        // 실제 API URL로 대체해야 합니다. (예: http://localhost:8000)
+        const String baseUrl = "http://localhost:8000"; 
+        final Map<String, dynamic> body = {
+            "post_uuid": postUUID,
+            "author_id": authorId, // 일반적으로 게시글 작성자
+            "peer_id": peerId,     // 일반적으로 요청을 보내는 사용자
+        };
+        final uri = Uri.parse('$baseUrl/chat/room/create').replace(
+        queryParameters: {
+            // Map<String, dynamic>을 Map<String, String>으로 변환해야 함
+            // Uri.replace(queryParameters)는 Map<String, String>을 기대합니다.
+            'post_uuid': postUUID,
+            'author_id': authorId,
+            'peer_id': peerId,
+        }
+    );
+
+        try {
+            // 3. API 호출
+            final response = await http.post(
+                uri,
+                headers: {
+                    'Content-Type': 'application/json',
+                    // 'Authorization': 'Bearer YOUR_TOKEN_IF_NEEDED', // 토큰이 필요하면 추가
+                },
+                body: json.encode(body),
+            );
+
+            // 4. 응답 처리
+            if (response.statusCode == 200) {
+                final responseData = json.decode(utf8.decode(response.bodyBytes));
+                
+                // 5. 'room_id' 추출 및 반환
+                final String roomId = responseData['room_id'] as String;
+                print(">>> Chat Room created successfully. Room ID: $roomId");
+
+                // 🚨 방이 생성되면, Provider 내부의 방 목록(userRooms)을 업데이트하는 로직도
+                // 이쯤에서 추가해야 할 수 있습니다. (예: loadChatRooms())
+
+                return roomId;
+            } else {
+                // 200 OK가 아닌 경우 (404, 500 등)
+                final errorBody = utf8.decode(response.bodyBytes);
+                print(">>> Chat Room creation failed. Status: ${response.statusCode}, Body: $errorBody");
+                throw Exception("Failed to create chat room: ${response.statusCode}");
+            }
+        } catch (e) {
+            print(">>> API connection error during room creation: $e");
+            throw Exception("Network or processing error: $e");
+        }
+    }
+
+
+
 
 
 

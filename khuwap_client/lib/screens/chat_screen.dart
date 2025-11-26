@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:khuwap_client/models/chat_message_item.dart';
 import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
 
@@ -24,51 +25,57 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
-  final ScrollController _scroll = ScrollController();
+  late final ScrollController _scroll;
 
   late ChatProvider provider; 
   @override
   void initState() {
     super.initState();
+    _scroll = ScrollController();
     provider = context.read<ChatProvider>();  
-    provider.updateOpenedRoom(widget.roomId);
 
-    Future.microtask(() async {
-      provider.resetUnreadCount(widget.roomId);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+        provider.updateOpenedRoom(widget.roomId);
+        provider.resetUnreadCount(widget.roomId);
 
+        // 글 상태 로딩
+        await provider.loadPostStatus(widget.postUUID);
 
-      // 글 상태 로딩
-      await provider.loadPostStatus(widget.postUUID);
+        // websocket 연결
+        if (!provider.isConnected) {
+            provider.connectChat(
+                userId: widget.userId,
+                postUUID: widget.postUUID,
+                peerId: widget.peerId,
+            );
+        }
 
-      // websocket 연결
-      provider.connectChat(
-        userId: widget.userId,
-        postUUID: widget.postUUID,
-        peerId: widget.peerId,
-      );
+        // 지난 메시지 로딩
+        await provider.loadMessages(widget.roomId);
 
-            // 지난 메시지 로딩
-      await provider.loadMessages(widget.roomId);
-
-      _scrollToBottom();
+        _scrollToBottom();
     });
   }
 
   @override
   void dispose() {
-    provider.updateOpenedRoom(null);
-  provider.disposeChat(); 
+    _scroll.dispose();
+    //context.read<ChatProvider>().updateOpenedRoom(null);
     print("### ChatScreen DISPOSE CALLED ###");
     super.dispose();
   }
 
   void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scroll.hasClients) {
-        _scroll.jumpTo(_scroll.position.maxScrollExtent);
-      }
-    });
-  }
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (_scroll.hasClients) {
+      _scroll.animateTo(
+        _scroll.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +102,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
       body: Column(
         children: [
-          Expanded(
+
+          Selector<ChatProvider, List<ChatMessageItem>>(
+            // Selector: ChatProvider에서 messages 리스트만 선택하여 구독
+            selector: (context, provider) => provider.messages,
+            
+            // messages가 변경될 때만 이 builder가 실행됩니다.
+            builder: (context, messages, child) {
+          return Expanded(
             child: ListView.builder(
               controller: _scroll,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -168,8 +182,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 );
               },
-            ),
+            )
+          );
+            }
           ),
+            
 
           _inputField(chat),
         ],
@@ -186,7 +203,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   return SafeArea(
     child: SizedBox(
-      height: 64, // 🔥 입력 영역 전체 높이를 딱 고정
+      height: 64, 
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         color: ivory,
@@ -195,7 +212,7 @@ class _ChatScreenState extends State<ChatScreen> {
             // 왼쪽 입력창
             Expanded(
               child: Container(
-                height: 44, // 🔥 TextField 박스 높이도 고정
+                height: 44, 
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
                   color: Colors.white,

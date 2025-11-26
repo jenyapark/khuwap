@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -13,6 +14,7 @@ import (
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
+var userConnsMutex sync.Mutex
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	userID := strings.TrimSuffix(r.URL.Query().Get("user_id"), "#")
@@ -26,15 +28,27 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 사용자 연결 등록 (userConns 맵에 저장)
-	registerUserConn(userID, conn)
-	fmt.Println("User registered:", userID)
-	registerUserRooms(userID)
+	userConnsMutex.Lock()
 
-	// 연결 종료 핸들링
+	if existingConn, ok := userConns[userID]; ok {
+		log.Printf("Existing connection detected → closing: %s", userID)
+		existingConn.Close()
+		delete(userConns, userID)
+	}
+
+	userConns[userID] = conn
+	userConnsMutex.Unlock() // 맵 접근이 끝났으므로 락을 해제합니다.
+
+	fmt.Println("User registered:", userID)
+	registerUserRooms(userID) // 방 등록은 락 바깥에서 호출해도 무방하다고 가정
+
+	// 연결 종료
 	defer func() {
-		deregisterUserConn(userID) // 연결 해제 시 맵에서 제거
+		userConnsMutex.Lock()
+		delete(userConns, userID)
+		userConnsMutex.Unlock()
 		conn.Close()
+		fmt.Println("User deregistered:", userID)
 	}()
 
 	// 메시지 읽기 루프
