@@ -52,13 +52,13 @@ func startZMQConsumer() {
 			continue
 		}
 
-		if data.SenderID == "" || data.PostUUID == "" || data.PeerID == "" {
-			log.Println("Invalid ZMQ message, ignore")
+		if data.SenderID == "" || data.RoomID == "" {
+			log.Println("Invalid ZMQ message: missing SenderID or RoomID, ignore")
 			continue
 		}
 
-		convID := makeConvID(data.PostUUID, data.SenderID, data.PeerID)
-		fmt.Println("broadcast to room:", convID)
-		broadcastToRoom(convID, msg)
+		fmt.Println("broadcast to room:", data.RoomID)
+
+		broadcastToPeers(data.RoomID, msg)
 	}
 }

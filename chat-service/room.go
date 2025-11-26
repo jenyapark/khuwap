@@ -3,95 +3,86 @@ package main
 import (
 	"fmt"
 	"log"
-	"sort"
 	"sync"
 
 	"github.com/gorilla/websocket"
 )
 
 var (
-	rooms   = make(map[string]*Room)
-	roomsMu sync.RWMutex
+	userConns   = make(map[string]*websocket.Conn)
+	userConnsMu sync.RWMutex
+
+	roomParticipants   = make(map[string][]string)
+	roomParticipantsMu sync.RWMutex
 )
 
-type Room struct {
-	ID    string
-	Conns map[string]*websocket.Conn // userID → conn
-}
+// 사용자 연결 등록
+func registerUserConn(userID string, conn *websocket.Conn) {
+	userConnsMu.Lock()
+	defer userConnsMu.Unlock()
 
-// 두 참여자를 정렬해서 convID 생성
-func makeConvID(postUUID, userA, userB string) string {
-	ids := []string{userA, userB}
-	sort.Strings(ids)
-	return fmt.Sprintf("%s:%s:%s", postUUID, ids[0], ids[1])
-}
-
-// 방 입장
-func joinRoom(convID, userID string, conn *websocket.Conn) {
-	roomsMu.Lock()
-	defer roomsMu.Unlock()
-
-	room, ok := rooms[convID]
-	if !ok {
-		room = &Room{
-			ID:    convID,
-			Conns: make(map[string]*websocket.Conn),
-		}
-		rooms[convID] = room
-		fmt.Println("Room created:", convID)
-	}
-
-	// 기존 연결 있으면 제거
-	if old, exists := room.Conns[userID]; exists && old != conn {
-		fmt.Println("기존 연결 감지 → 강제 종료:", convID, "user:", userID)
+	// 기존 연결이 있다면 강제 종료 (단일 연결 보장)
+	if old, exists := userConns[userID]; exists && old != conn {
+		fmt.Println("Existing connection detected → closing:", userID)
 		old.Close()
 	}
 
-	room.Conns[userID] = conn
-	fmt.Println("User joined:", userID, "room:", convID)
+	userConns[userID] = conn
+	fmt.Println("User registered:", userID)
 }
 
-// 방 나가기
-func leaveRoom(convID, userID string) {
-	roomsMu.Lock()
-	defer roomsMu.Unlock()
+// 사용자 연결 해제
+func deregisterUserConn(userID string) {
+	userConnsMu.Lock()
+	defer userConnsMu.Unlock()
 
-	room, ok := rooms[convID]
-	if !ok {
+	delete(userConns, userID)
+	fmt.Println("User deregistered:", userID)
+}
+
+func registerUserRooms(userID string) {
+	rooms, err := getMyRooms(userID)
+	if err != nil {
+		log.Println("Failed to fetch user rooms for broadcast:", err)
 		return
 	}
 
-	delete(room.Conns, userID)
-	fmt.Println("User left:", userID, "room:", convID)
+	roomParticipantsMu.Lock()
+	defer roomParticipantsMu.Unlock()
 
-	if len(room.Conns) == 0 {
-		delete(rooms, convID)
-		fmt.Println("Room removed:", convID)
+	for _, room := range rooms {
+		roomParticipants[room.RoomID] = []string{room.AuthorID, room.PeerID}
 	}
 }
 
-// 방 전체에 메시지 브로드캐스트
-func broadcastToRoom(convID string, rawMsg string) {
-	roomsMu.RLock()
-	room, ok := rooms[convID]
+// 특정 게시글(PostUUID)의 참여자들에게 메시지 브로드캐스트
+func broadcastToPeers(roomID string, rawMsg string) {
+	roomParticipantsMu.RLock()
+	participants, ok := roomParticipants[roomID]
+	roomParticipantsMu.RUnlock()
+
 	if !ok {
-		roomsMu.RUnlock()
+		log.Println("Broadcast failed: RoomID not found in active map:", roomID)
 		return
 	}
 
-	// 복사하여 잠금 짧게 유지
-	conns := make(map[string]*websocket.Conn)
-	for uid, c := range room.Conns {
-		conns[uid] = c
-	}
-	roomsMu.RUnlock()
+	userConnsMu.RLock()
+	defer userConnsMu.RUnlock()
 
-	for uid, c := range conns {
+	connsToSend := make(map[string]*websocket.Conn)
+
+	for _, uid := range participants {
+		if c, ok := userConns[uid]; ok {
+			connsToSend[uid] = c
+		}
+	}
+
+	for uid, c := range connsToSend {
 		if err := c.WriteMessage(1, []byte(rawMsg)); err != nil {
 			log.Println("broadcast error to", uid, ":", err)
-			roomsMu.Lock()
-			delete(room.Conns, uid)
-			roomsMu.Unlock()
+			userConnsMu.Lock()
+			delete(userConns, uid) // 오류 발생 시 연결 제거
+			userConnsMu.Unlock()
 		}
 	}
 }

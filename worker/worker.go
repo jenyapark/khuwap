@@ -1,7 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"log"
+	"os/exec"
+	"strings"
 
 	"github.com/pebbe/zmq4"
 )
@@ -22,8 +26,18 @@ func main() {
 			continue
 		}
 
-		// AI
+		cmd := exec.Command("./filter/target/debug/filter", msg)
 
-		push.Send(msg, 0)
+		// 메시지를 표준 입력으로 전달
+		cmd.Stdin = strings.NewReader(msg)
+
+		// 표준 출력 결과를 받음
+		out, err := cmd.Output()
+		if err != nil {
+			log.Println("Filter command error:", err)
+			continue
+		}
+		trimmed_out := bytes.TrimSpace(out)
+		push.Send(string(trimmed_out), 0)
 	}
 }
