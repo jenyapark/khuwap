@@ -22,6 +22,7 @@ def save_message(
             room_id=room_id,
             sender_id=sender_id,
             content=content,
+            timestamp=datetime.now(),
         )
     )
     db.commit()

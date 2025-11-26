@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import select, insert, delete, update, and_, or_
-
+from common.db import engine
 from chat.schemas import SendMessageBody
 from chat.models import chat_messages, chat_rooms, chat_read_state
 
@@ -91,21 +91,32 @@ def send_chat_message(payload: SendMessageBody, db: Session = Depends(get_db)):
     if payload.sender_id not in [row.author_id, row.peer_id]:
         raise HTTPException(status_code=403, detail="not a participant")
 
+    try:
     
-    save_message(
+        save_message(
         db,
         room_id=payload.room_id,
         sender_id=payload.sender_id,
         content=payload.content,
-    )
+        )
 
-    update_chat_room_last_message(
+        update_chat_room_last_message(
         db,
         room_id=payload.room_id,
         last_message=payload.content,
-    )
+        )
+        db.commit()
 
-    return {"success": True}
+        return {"success": True}
+    except Exception as e:
+        print("--- FATAL MESSAGE SAVE ERROR ---")
+        traceback.print_exc()
+        print(f"Error details: {e}")
+        print("--------------------------------")
+        
+        # 클라이언트(Worker)에게 500 오류 반환
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
 
 
 # 4) 방 자동 생성용 API 
@@ -116,12 +127,36 @@ def create_room(
     peer_id: str,
     db: Session = Depends(get_db)
 ):
-    row = get_or_create_chat_room(
+
+    with engine.connect() as conn:
+        # 먼저 기존 방 탐색
+        existing = conn.execute(
+            select(chat_rooms)
+            .where(chat_rooms.c.post_uuid == post_uuid)
+            .where(
+            or_(
+                # Case 1: 요청받은 A(author), B(peer) 순서대로 방이 존재할 때
+                and_(chat_rooms.c.author_id == author_id, chat_rooms.c.peer_id == peer_id),
+                
+                # Case 2: B(author), A(peer) 순서가 뒤바뀌어 방이 이미 존재할 때
+                and_(chat_rooms.c.author_id == peer_id, chat_rooms.c.peer_id == author_id), 
+            ))  ).mappings().first()
+
+        if existing:
+            return {
+                "success": True,
+                "room_id": existing["room_id"],
+                "created": False
+            }
+        
+        row = get_or_create_chat_room(
         db,
         post_uuid=post_uuid,
         author_id=author_id,
         peer_id=peer_id,
     )
+
+
 
     return {
         "success": True,
@@ -130,3 +165,17 @@ def create_room(
         "peer_id": row.peer_id,
         "author_id": row.author_id,
     }
+
+@router.delete("/chat/room/{room_id}")
+def delete_chat_room(room_id: str):
+    with engine.connect() as conn:
+        result = conn.execute(
+            delete(chat_rooms).where(chat_rooms.c.room_id == room_id)
+        )
+
+        conn.commit()
+
+        if result.rowcount == 0:
+            return {"message": "삭제할 채팅방이 없음.", "room_id": room_id}
+
+        return {"message": "채팅방 삭제 완료", "room_id": room_id}
