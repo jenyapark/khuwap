@@ -183,7 +183,7 @@ void resetUnreadCount(String roomId) {
 
     if (_isConnected) {
       print("WS already connected. Skipping connection attempt.");
-      return; // 🚨 이미 연결되어 있으면 재연결하지 않음
+      return; 
     }
 
     _ws.connect(

@@ -76,7 +76,8 @@ def valiate_post_creation(user_id: str, current_course: str, desired_course: str
         select(exchange).where(
             and_(
                 exchange.c.author_id == user_id,
-                exchange.c.current_course == current_course
+                exchange.c.current_course == current_course,
+                exchange.c.status != 'completed' #교환 완료 상태가 아니면 중복으로 간주함
             )
         )
     ).first()

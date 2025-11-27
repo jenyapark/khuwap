@@ -28,20 +28,22 @@ class _ChatScreenState extends State<ChatScreen> {
   late final ScrollController _scroll;
 
   late ChatProvider provider; 
+  bool _isLoadingMore = false;
+  int _lastMessageCount = 0;
+
   @override
   void initState() {
     super.initState();
     _scroll = ScrollController();
     provider = context.read<ChatProvider>();  
+    _scroll.addListener(_onScroll);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
         provider.updateOpenedRoom(widget.roomId);
         provider.resetUnreadCount(widget.roomId);
 
-        // 글 상태 로딩
         await provider.loadPostStatus(widget.postUUID);
 
-        // websocket 연결
         if (!provider.isConnected) {
             provider.connectChat(
                 userId: widget.userId,
@@ -50,35 +52,70 @@ class _ChatScreenState extends State<ChatScreen> {
             );
         }
 
-        // 지난 메시지 로딩
         await provider.loadMessages(widget.roomId);
+        _lastMessageCount = provider.messages.length;
 
         _scrollToBottom();
     });
   }
 
+  void _onScroll() {
+    if (_scroll.position.pixels == _scroll.position.minScrollExtent &&
+        !_isLoadingMore 
+    ) { 
+      
+      setState(() {
+        _isLoadingMore = true;
+      });
+      
+      final oldScrollExtent = _scroll.position.maxScrollExtent;
+      
+      provider.loadMessages(widget.roomId).then((_) {
+        if (_scroll.hasClients && mounted) {
+          final newScrollExtent = _scroll.position.maxScrollExtent;
+          final scrollDelta = newScrollExtent - oldScrollExtent;
+          
+          _scroll.jumpTo(_scroll.position.pixels + scrollDelta);
+        }
+        
+        setState(() {
+          _isLoadingMore = false;
+        });
+      });
+    }
+  }
+
+
   @override
   void dispose() {
+    _scroll.removeListener(_onScroll);
     _scroll.dispose();
-    //context.read<ChatProvider>().updateOpenedRoom(null);
     print("### ChatScreen DISPOSE CALLED ###");
     super.dispose();
   }
 
   void _scrollToBottom() {
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (_scroll.hasClients) {
-      _scroll.animateTo(
-        _scroll.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    }
-  });
-}
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scroll.hasClients) {
+          // 50ms 후 다시 시도 (안정성 확보)
+          Future.delayed(const Duration(milliseconds: 50), () {
+              if (_scroll.hasClients) {
+                   _scroll.animateTo(
+                      _scroll.position.maxScrollExtent,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                  );
+              }
+          });
+        
+      }
+    });
+  }
+  // ********* [함수 닫힘 정상] *********
+
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) { // <--- 이제 _ChatScreenState의 일부로 인식됩니다.
     const ivory = Color(0xFFFAF8F3);
     const deepRed = Color(0xFF8B0000);
     const deepBrown = Color(0xFF4A2A25);
@@ -104,18 +141,54 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
 
           Selector<ChatProvider, List<ChatMessageItem>>(
-            // Selector: ChatProvider에서 messages 리스트만 선택하여 구독
             selector: (context, provider) => provider.messages,
             
-            // messages가 변경될 때만 이 builder가 실행됩니다.
             builder: (context, messages, child) {
+              if (messages.length > _lastMessageCount) {
+                
+                _lastMessageCount = messages.length;
+                
+                bool isNearEnd = false;
+                if (_scroll.hasClients) {
+                    final position = _scroll.position;
+                    if (position.maxScrollExtent - position.pixels < 300) {
+                        isNearEnd = true;
+                    }
+                }
+                if (isNearEnd && !_isLoadingMore) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (_scroll.hasClients) {
+                      _scrollToBottom();
+                    }
+                  });
+                }
+              }
+
           return Expanded(
             child: ListView.builder(
               controller: _scroll,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              itemCount: chat.messages.length,
+              itemCount: chat.messages.length + (_isLoadingMore ? 1 : 0),
               itemBuilder: (context, index) {
-                final msg = chat.messages[index];
+                
+                if (_isLoadingMore && index == 0) {
+                  return const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: deepRed,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                
+                final msgIndex = index - (_isLoadingMore ? 1 : 0);
+                final msg = chat.messages[msgIndex];
                 final isMine = msg.senderId == widget.userId;
 
                 return Container(
@@ -125,7 +198,6 @@ class _ChatScreenState extends State<ChatScreen> {
                         isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 상대방 프로필 동그라미
                       if (!isMine)
                         Container(
                           padding: const EdgeInsets.all(8),
@@ -138,7 +210,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
                       if (!isMine) const SizedBox(width: 8),
 
-                      // 메시지 버블
                       Flexible(
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -168,7 +239,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
                       if (isMine) const SizedBox(width: 8),
 
-                      // 내 프로필 (오른쪽)
                       if (isMine)
                         Container(
                           padding: const EdgeInsets.all(8),
@@ -209,7 +279,6 @@ class _ChatScreenState extends State<ChatScreen> {
         color: ivory,
         child: Row(
           children: [
-            // 왼쪽 입력창
             Expanded(
               child: Container(
                 height: 44, 
@@ -240,7 +309,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
             const SizedBox(width: 8),
 
-            // 전송 버튼
             SizedBox(
               width: 44,
               height: 44,
@@ -269,6 +337,5 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     ),
   );
-}
-
+  }
 }

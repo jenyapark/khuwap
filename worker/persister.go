@@ -24,6 +24,8 @@ func SaveMessageViaAPI(msg *ChatMessage) error {
 	)
 	if err != nil {
 		return fmt.Errorf("API request error: %w", err)
+	} else {
+
 	}
 	defer resp.Body.Close()
 

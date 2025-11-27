@@ -11,7 +11,7 @@ class ChatWebSocketService {
 
     final wsUrl = Uri(
       scheme: "ws",
-      host: "localhost", // ← 네 PC 로컬 IP 직접 넣기
+      host: "localhost",
       port: 8080,
       path: "/ws",
       queryParameters: {
