@@ -152,8 +152,13 @@ FutureBuilder<String?>(
       return const SizedBox.shrink(); // 내 글이면 버튼 숨김
     }
 
-    return SizedBox(
-      width: double.infinity,
+    
+  
+ return Row(
+  children: [
+    // ============ 대화하기 버튼 (좌측) ============
+    Expanded(
+      flex: 7,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF8B0000),
@@ -165,32 +170,30 @@ FutureBuilder<String?>(
         onPressed: () async {
           final chatProvider = context.read<ChatProvider>();
           try {
-    final String actualRoomId = await chatProvider.createChatRoom(
-      postUUID: postUUID,
-      authorId: authorId,
-      peerId: myId, 
-    );
+            final String actualRoomId = await chatProvider.createChatRoom(
+              postUUID: postUUID,
+              authorId: authorId,
+              peerId: myId,
+            );
 
-    if (actualRoomId != null && actualRoomId != "-1") {
-      await chatProvider.loadRooms(myId);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ChatScreen(
-            roomId: actualRoomId, 
-            userId: myId,
-            postUUID: postUUID,
-            peerId: authorId, 
-            postTitle: "${ownedTitle} ↔ ${desiredTitle}",
-          ),
-        ),
-      );
-    } else {
-      print(">>> 방 생성 API가 유효하지 않은 ID를 반환했습니다.");
-    }
-  } catch (e) {
-    print(">>> 방 생성 중 오류 발생: $e");
-  }
+            if (actualRoomId != "-1") {
+              await chatProvider.loadRooms(myId);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChatScreen(
+                    roomId: actualRoomId,
+                    userId: myId,
+                    postUUID: postUUID,
+                    peerId: authorId,
+                    postTitle: "${ownedTitle} ↔ ${desiredTitle}",
+                  ),
+                ),
+              );
+            }
+          } catch (e) {
+            print(">>> 방 생성 중 오류: $e");
+          }
         },
         child: const Text(
           "대화하기",
@@ -201,9 +204,31 @@ FutureBuilder<String?>(
           ),
         ),
       ),
-    );
-  },
-),
+    ),
+
+    // ============ 수정 버튼 ============
+    _roundIconButton(
+      icon: Icons.edit,
+      color: Colors.grey.shade700,
+      onPressed: () {
+        print("수정 버튼 클릭됨");
+        // 수정 페이지 이동 이어야 됨
+      },
+    ),
+
+    // ============ 삭제 버튼 ============
+    _roundIconButton(
+      icon: Icons.delete,
+      color: Colors.red.shade700,
+      onPressed: () {
+        print("삭제 버튼 클릭됨");
+        // 삭제 로직 이어야 함
+      },
+    ),
+  ],
+);
+  }
+)
 
             
           ],
@@ -253,6 +278,27 @@ FutureBuilder<String?>(
     ),
   );
 }
+
+Widget _roundIconButton({
+  required IconData icon,
+  required Color color,
+  required VoidCallback onPressed,
+}) {
+  return Container(
+    width: 50,
+    height: 50,
+    margin: const EdgeInsets.only(left: 10),
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(14),
+    ),
+    child: IconButton(
+      icon: Icon(icon, color: Colors.white),
+      onPressed: onPressed,
+    ),
+  );
+}
+
 
 
   // ============== SUBJECT DETAIL CARD ==================

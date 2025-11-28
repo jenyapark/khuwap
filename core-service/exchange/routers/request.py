@@ -61,7 +61,7 @@ def create_exchange_request(payload: ExchangeRequestCreate):
         conn.commit()
 
         
-        # ✅ chat-service 연동 (예외 없이 상태 코드로 처리)
+        # chat-service 연동 (예외 없이 상태 코드로 처리)
     response = requests.post(
         f"{CHAT_SERVICE_URL}/chat/init",
         json={
@@ -82,7 +82,7 @@ def create_exchange_request(payload: ExchangeRequestCreate):
     else:
         room_info = response.json()
 
-    print(f"✅ chat-service 연동 성공: {response.json()}")
+    print(f"chat-service 연동 성공: {response.json()}")
     
     return success_response(
         message = "교환 요청이 전송되었습니다. (채팅방 생성 완료)",
