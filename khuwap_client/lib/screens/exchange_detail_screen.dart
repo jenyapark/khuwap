@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:khuwap_client/models/chat_room_item.dart';
 import 'package:khuwap_client/screens/chat_screen.dart';
+import 'package:khuwap_client/screens/edit_exchange_post_screen.dart';
 import '../services/auth_service.dart';
-import 'package:provider/provider.dart'; 
+import '../services/exchange_service.dart';
+import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
 
-class ExchangeDetailScreen extends StatelessWidget {
+class ExchangeDetailScreen extends StatefulWidget {
   final String ownedTitle;
   final String ownedProfessor;
   final String ownedDay;
@@ -14,7 +15,6 @@ class ExchangeDetailScreen extends StatelessWidget {
   final String ownedCourseCode;
   final String ownedRoom;
   final String ownedCredit;
-
 
   final String desiredTitle;
   final String desiredProfessor;
@@ -26,7 +26,6 @@ class ExchangeDetailScreen extends StatelessWidget {
   final String desiredCredit;
 
   final String note;
-
   final String authorId;
   final String postUUID;
 
@@ -48,11 +47,23 @@ class ExchangeDetailScreen extends StatelessWidget {
     required this.desiredCourseCode,
     required this.desiredRoom,
     required this.desiredCredit,
-    this.note = "",
+    required this.note,
     required this.authorId,
     required this.postUUID,
-
   });
+
+  @override
+  State<ExchangeDetailScreen> createState() => _ExchangeDetailScreenState();
+}
+
+class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
+  late String currentNote;
+
+  @override
+  void initState() {
+    super.initState();
+    currentNote = widget.note;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,232 +87,245 @@ class ExchangeDetailScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: Column(
           children: [
-
-            // =================== OWNED CARD ===================
+            // ---------------- OWNED CARD ----------------
             _buildSubjectDetailCard(
               label: "owned",
-              courseCode: ownedCourseCode,
-              title: ownedTitle,
-              professor: ownedProfessor,
-              day: ownedDay,
-              start: ownedStart,
-              end: ownedEnd,
-              room: ownedRoom,
-              credit: ownedCredit,
+              courseCode: widget.ownedCourseCode,
+              title: widget.ownedTitle,
+              professor: widget.ownedProfessor,
+              day: widget.ownedDay,
+              start: widget.ownedStart,
+              end: widget.ownedEnd,
+              room: widget.ownedRoom,
+              credit: widget.ownedCredit,
               isRightAligned: false,
             ),
 
             const SizedBox(height: 20),
 
-            // ================== DESIRED CARD ==================
+            // ---------------- DESIRED CARD ----------------
             _buildSubjectDetailCard(
               label: "desired",
-              courseCode: desiredCourseCode,
-              title: desiredTitle,
-              professor: desiredProfessor,
-              day: desiredDay,
-              start: desiredStart,
-              end: desiredEnd,
-              room: desiredRoom,
-              credit: desiredCredit,
+              courseCode: widget.desiredCourseCode,
+              title: widget.desiredTitle,
+              professor: widget.desiredProfessor,
+              day: widget.desiredDay,
+              start: widget.desiredStart,
+              end: widget.desiredEnd,
+              room: widget.desiredRoom,
+              credit: widget.desiredCredit,
               isRightAligned: false,
             ),
 
             const SizedBox(height: 20),
 
-            // ================== NOTE BOX ==================
-            _buildNoteBox(note),
+            // ---------------- NOTE AREA ----------------
+            _buildNoteBox(currentNote),
             const SizedBox(height: 20),
 
-            // ================== REQUEST BUTTON ==================
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: khured,
-                  minimumSize: const Size(0, 54),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                onPressed: () {},
-                child: const Text(
-                  "교환 요청",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
+            // ---------------- BOTTOM BUTTONS ----------------
+            FutureBuilder<String?>(
+              future: AuthService.getUserId(),
+              builder: (context, snap) {
+                if (!snap.hasData) return const SizedBox.shrink();
+
+                final myId = snap.data!;
+                final isMine = (myId == widget.authorId);
+
+                // 내 글일 때 → 수정 / 삭제
+                if (isMine) {
+                  return Row(
+                    children: [
+                      // 수정
+                      Expanded(
+                        child: Container(
+                          height: 45,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade700,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.white),
+                            onPressed: () async {
+                              final newNote = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => EditExchangePostScreen(
+                                    postUUID: widget.postUUID,
+                                    initialNote: currentNote,
+                                  ),
+                                ),
+                              );
+
+                              if (newNote != null && newNote is String) {
+                                setState(() => currentNote = newNote);
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("게시글이 수정되었습니다.")),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 8),
+
+                      // 삭제
+                      Expanded(
+                        child: Container(
+                          height: 45,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF8B0000),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.white),
+                            onPressed: () async {
+                              final confirm = await showDeleteConfirmDialog(context);
+                              if (!confirm) return;
+
+                              final result = await ExchangeService.deletePost(widget.postUUID);
+
+                              if (result) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("게시글이 삭제되었습니다.")),
+                                );
+                                Navigator.pop(context);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("삭제에 실패했습니다.")),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                // 남의 글일 때 → 교환 요청 / 대화
+                return Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: khured,
+                          minimumSize: const Size(0, 45),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onPressed: () {},
+                        child: const Text(
+                          "교환 요청",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    Expanded(
+                      flex: 3,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: khured,
+                          minimumSize: const Size(0, 45),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onPressed: () async {
+                          final myId = snap.data!;
+                          final chatProvider = context.read<ChatProvider>();
+
+                          final actualRoomId = await chatProvider.createChatRoom(
+                            postUUID: widget.postUUID,
+                            authorId: widget.authorId,
+                            peerId: myId,
+                          );
+
+                          if (actualRoomId != "-1") {
+                            await chatProvider.loadRooms(myId);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ChatScreen(
+                                  roomId: actualRoomId,
+                                  userId: myId,
+                                  postUUID: widget.postUUID,
+                                  peerId: widget.authorId,
+                                  postTitle: "${widget.ownedTitle} ↔ ${widget.desiredTitle}",
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text(
+                          "대화",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
-
-            const SizedBox(height: 20),
-
-            // ================== CHAT BUTTON ==================
-FutureBuilder<String?>(
-  future: AuthService.getUserId(),
-  builder: (context, snap) {
-    if (!snap.hasData) return const SizedBox.shrink();
-
-    final myId = snap.data!;
-
-    final isMine = (myId == authorId);
-
-    if (isMine) {
-      return const SizedBox.shrink(); // 내 글이면 버튼 숨김
-    }
-
-    
-  
- return Row(
-  children: [
-    // ============ 대화하기 버튼 (좌측) ============
-    Expanded(
-      flex: 7,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF8B0000),
-          minimumSize: const Size(0, 54),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-        onPressed: () async {
-          final chatProvider = context.read<ChatProvider>();
-          try {
-            final String actualRoomId = await chatProvider.createChatRoom(
-              postUUID: postUUID,
-              authorId: authorId,
-              peerId: myId,
-            );
-
-            if (actualRoomId != "-1") {
-              await chatProvider.loadRooms(myId);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChatScreen(
-                    roomId: actualRoomId,
-                    userId: myId,
-                    postUUID: postUUID,
-                    peerId: authorId,
-                    postTitle: "${ownedTitle} ↔ ${desiredTitle}",
-                  ),
-                ),
-              );
-            }
-          } catch (e) {
-            print(">>> 방 생성 중 오류: $e");
-          }
-        },
-        child: const Text(
-          "대화하기",
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    ),
-
-    // ============ 수정 버튼 ============
-    _roundIconButton(
-      icon: Icons.edit,
-      color: Colors.grey.shade700,
-      onPressed: () {
-        print("수정 버튼 클릭됨");
-        // 수정 페이지 이동 이어야 됨
-      },
-    ),
-
-    // ============ 삭제 버튼 ============
-    _roundIconButton(
-      icon: Icons.delete,
-      color: Colors.red.shade700,
-      onPressed: () {
-        print("삭제 버튼 클릭됨");
-        // 삭제 로직 이어야 함
-      },
-    ),
-  ],
-);
-  }
-)
-
-            
           ],
         ),
       ),
     );
   }
-  
+
+  // ---------------- NOTE BOX ----------------
   Widget _buildNoteBox(String note) {
-  const textBrown = Color(0xFF3E2A25);
-  const borderColor = Color(0xFFE2E2E2);
+    const textBrown = Color(0xFF3E2A25);
+    const borderColor = Color(0xFFE2E2E2);
 
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: borderColor, width: 1.1),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "작성자 메모: ",
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: textBrown,
-          ),
-        ),
-
-        // note 내용이 길어도 자동 줄바꿈
-        Expanded(
-          child: Text(
-            (note.isEmpty)
-                ? "작성자가 메모를 남기지 않았습니다."
-                : note,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor, width: 1.1),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "작성자 메모: ",
             style: TextStyle(
               fontSize: 15,
-              height: 1.45,
-              color: textBrown.withOpacity(0.75),
+              fontWeight: FontWeight.w700,
+              color: textBrown,
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+          Expanded(
+            child: Text(
+              note.isEmpty ? "작성자가 메모를 남기지 않았습니다." : note,
+              style: TextStyle(
+                fontSize: 15,
+                height: 1.45,
+                color: textBrown.withOpacity(0.75),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-Widget _roundIconButton({
-  required IconData icon,
-  required Color color,
-  required VoidCallback onPressed,
-}) {
-  return Container(
-    width: 50,
-    height: 50,
-    margin: const EdgeInsets.only(left: 10),
-    decoration: BoxDecoration(
-      color: color,
-      borderRadius: BorderRadius.circular(14),
-    ),
-    child: IconButton(
-      icon: Icon(icon, color: Colors.white),
-      onPressed: onPressed,
-    ),
-  );
-}
-
-
-
-  // ============== SUBJECT DETAIL CARD ==================
+  // ---------------- SUBJECT DETAIL CARD ----------------
   Widget _buildSubjectDetailCard({
     required String label,
     required String title,
@@ -332,65 +356,53 @@ Widget _roundIconButton({
             ? CrossAxisAlignment.end
             : CrossAxisAlignment.start,
         children: [
-          // ---------- LABEL ----------
+          // LABEL
           Container(
-  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-  decoration: BoxDecoration(
-    color: khured.withOpacity(0.08),
-    borderRadius: BorderRadius.circular(6),
-    border: Border.all(
-      color: khured.withOpacity(0.25),
-      width: 1.0,
-    ),
-  ),
-  child: Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      // owned / desired
-      Text(
-        label,
-        style: const TextStyle(
-          color: khured,
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-
-      const SizedBox(width: 4),
-
-      // 가운데 점 (·)
-      const Text(
-        "·",
-        style: TextStyle(
-          color: khured,
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-
-      const SizedBox(width: 4),
-
-      // 학수번호
-      Text(
-        "[${courseCode}]",
-        style: const TextStyle(
-          color: khured,
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-        ),
-      
-        
-      ),
-    ],
-  ),
-),
-
-        
-      
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+            decoration: BoxDecoration(
+              color: khured.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: khured.withOpacity(0.25),
+                width: 1.0,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: khured,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Text(
+                  "·",
+                  style: TextStyle(
+                    color: khured,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  "[${courseCode}]",
+                  style: const TextStyle(
+                    color: khured,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
 
           const SizedBox(height: 14),
 
-          // ---------- TITLE ----------
+          // TITLE
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 260),
             child: Text(
@@ -408,7 +420,7 @@ Widget _roundIconButton({
 
           const SizedBox(height: 12),
 
-          // ---------- PROFESSOR ----------
+          // PROFESSOR
           Text(
             professor,
             style: TextStyle(
@@ -420,7 +432,7 @@ Widget _roundIconButton({
 
           const SizedBox(height: 4),
 
-          // ---------- TIME ----------
+          // TIME + ROOM + CREDIT
           Text(
             "$day   $start~$end($room) $credit학점",
             style: TextStyle(
@@ -432,4 +444,88 @@ Widget _roundIconButton({
       ),
     );
   }
+}
+
+// ---------------- DELETE CONFIRM DIALOG ----------------
+
+Future<bool> showDeleteConfirmDialog(BuildContext context) async {
+  final result = await showDialog<bool>(
+    context: context,
+    barrierDismissible: true,
+    builder: (context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "정말 삭제하시겠습니까?",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                "삭제하면 되돌릴 수 없습니다.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black54,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade700,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text(
+                          "취소",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Color(0xFF8B0000),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text(
+                          "삭제",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+
+  return result ?? false;
 }

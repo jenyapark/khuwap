@@ -173,6 +173,67 @@ static Future<String?> fetchAuthorId(String postUUID) async {
   return data["data"]["author_id"];
 }
 
+// 게시글 삭제
+  static Future<bool> deletePost(String postUuid) async {
+    final url = Uri.parse("$baseUrl/exchange/$postUuid");
+
+    final response = await http.delete(
+      url,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      print("삭제 실패: ${response.body}");
+      return false;
+    }
+  }
+
+
+static Future<bool> createPost({
+    required String authorId,
+    required String ownedCourseCode,
+    required String desiredCourseCode,
+    required String note,
+  }) async {
+    final url = Uri.parse("$baseUrl/exchange/");
+
+    final body = {
+      "author_id": authorId,
+      "current_course": ownedCourseCode,
+      "desired_course": desiredCourseCode,
+      "note": note,
+    };
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(body),
+    );
+
+    return response.statusCode == 201;
+  }
+
+  static Future<bool> updatePost(String postUUID, String newNote) async {
+  final url = Uri.parse("$baseUrl/exchange/$postUUID");
+
+  final body = {
+    "note": newNote,
+  };
+
+  final response = await http.patch(
+    url,
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode(body),
+  );
+
+  return response.statusCode == 200;
+}
+
+
 
 
 

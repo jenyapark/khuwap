@@ -4,6 +4,8 @@ import '../services/exchange_service.dart';
 import '../services/auth_service.dart';
 import 'exchange_detail_screen.dart';
 import '../widgets/exchange_card.dart'; 
+import 'exchange_post_screen.dart';
+
 
 class HomeBody extends StatelessWidget {
   const HomeBody({super.key});
@@ -137,7 +139,12 @@ class HomeBody extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         backgroundColor: deepRed,
         shape: const CircleBorder(),
-        onPressed: () {},
+        onPressed: () {Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const CreateExchangePostScreen(),
+      ),
+    );},
         child: const Icon(Icons.edit, color: Colors.white),
       ),
     );
