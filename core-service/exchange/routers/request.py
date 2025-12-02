@@ -168,21 +168,6 @@ def accept(request_uuid: str):
             current_course=current_course,
         )
 
-        room_id = conn.execute(
-            select(chat_rooms.c.room_id)
-            .where(chat_rooms.c.request_uuid == request_uuid)
-        ).scalar_one_or_none()
-
-        if room_id:
-            try:
-                chat_response = requests.patch(f"http://localhost:8000/chat/rooms/{room_id}/deactivate")
-                if chat_response.status_code == 200:
-                    chat_status = "deactivated"
-                else:
-                    chat_status = f"error ({chat_response.status_code})"
-            except Exception as e:
-                chat_status = f"error ({e})"
-
 
         conn.execute(
             update(exchange_requests)
@@ -205,9 +190,5 @@ def accept(request_uuid: str):
         status_code=200,
         data={
             "exchange_status": "completed",
-            "chat_room": {
-                "status": chat_status,
-                "room_id": room_id
-            }
         },
     )

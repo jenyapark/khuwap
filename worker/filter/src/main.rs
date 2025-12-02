@@ -1,3 +1,6 @@
+mod rule;
+mod ai;
+
 use std::env;
 use serde::{Deserialize, Serialize};
 use serde_json::{json};
@@ -12,27 +15,7 @@ struct ChatMessage {
     content: String,
 }
 
-static FORBIDDEN_WORDS: &[&str] = &[
-    "씨발",
-    "븅신",
-    "병신",
-    "좆",
-    "카카오톡",
-    "kakao",
-    "kkt",
-    "신한은행",
-    "국민은행",
-    "카카오뱅크",
-    "계좌",
-    "통장",
-    "송금",
-    "입금",
-];
-
-fn contains_forbidden_word(msg: &str) -> bool {
-    let lower = msg.to_lowercase();
-    FORBIDDEN_WORDS.iter().any(|w| lower.contains(w))
-}
+const BLOCKED_MESSAGE: &str = "비속어 및 금지 거래 유도를 포함한 메시지입니다.";
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -45,27 +28,43 @@ fn main() {
     let mut chat_message: ChatMessage = match serde_json::from_str(msg_json_str) {
         Ok(msg) => msg,
         Err(_) => {
-            // 파싱 실패 시 원본 그대로 반환하여 Go에서 처리하거나 무시
             println!("{}", msg_json_str);
             return;
         }
     };
 
-    if contains_forbidden_word(&chat_message.content) {
-        chat_message.content = String::from("비속어 및 금지 정보가 포함된 메시지입니다.");
+    let msg_json_str = &args[1];
+
+    let mut chat_message: ChatMessage = match serde_json::from_str(msg_json_str) {
+        Ok(msg) => msg,
+        Err(_) => {
+            println!("{}", msg_json_str);
+            return;
+        }
+    };
+
+    let original_content = &chat_message.content.clone();
+
+    // rule.rs
+    if rule::contains_forbidden_word(original_content) {
+        chat_message.content = BLOCKED_MESSAGE.to_string();
+    }
+
+    //ai.rs
+    if chat_message.content == *original_content {
+        if ai::maybe_ai_classify(original_content) {
+            chat_message.content = BLOCKED_MESSAGE.to_string();
+        }
     }
 
     match serde_json::to_string(&chat_message) {
-    Ok(output_str) => {
-        let mut stdout = io::stdout();
-        if let Err(e) = write!(stdout, "{}", output_str) {
-            eprintln!("Failed to write to stdout: {}", e);
+        Ok(output_str) => {
+            let mut stdout = io::stdout();
+            let _ = write!(stdout, "{}", output_str);
+            let _ = stdout.flush();
+        },
+        Err(e) => {
+            eprintln!("Failed to serialize result: {}", e);
         }
-        if let Err(e) = stdout.flush() {
-            eprintln!("Failed to flush stdout: {}", e);
-        }
-    },
-    Err(_) => {
     }
-}
 }

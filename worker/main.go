@@ -14,9 +14,7 @@ import (
 )
 
 func generateWorkerID() string {
-	// 현재 시간을 시드로 사용하여 랜덤 값 생성
 	rand.New(rand.NewSource(time.Now().UnixNano()))
-	// "Worker-" + 시간(밀리초) + 랜덤 숫자(0~999) 조합으로 ID 생성
 	return fmt.Sprintf("Worker-%d-%03d", time.Now().UnixNano()/int64(time.Millisecond), rand.Intn(1000))
 }
 
@@ -32,7 +30,6 @@ func main() {
 
 	for {
 
-		//zmq 메시지 수신 (클라이언트 -> Chat Service -> Worker)
 		msg, err := pull.Recv(0)
 		if err != nil {
 			fmt.Println("worker recv error:", err)
@@ -42,7 +39,7 @@ func main() {
 		// 필터링
 		cmd := exec.Command("./filter/target/debug/filter", msg)
 		cmd.Stdin = strings.NewReader(msg)
-		out, err := cmd.Output()
+		out, err := cmd.CombinedOutput()
 		if err != nil {
 			log.Println("Filter command error:", err)
 			continue
@@ -58,13 +55,11 @@ func main() {
 
 		if chatMsg.RoomID != "" {
 			if err := SaveMessageViaAPI(&chatMsg); err != nil {
-				log.Println("Error saving message via API:", err)
-			} else {
-				log.Printf("[%s] Message processed and saved: %s", workerID, chatMsg.PostUUID)
+				log.Println("Error saving message:", err)
 			}
 		}
 
-		// zmq PUSH  Chat Service로 전송 (Worker -> Chat Service)
+		// zmq PUSH
 		push.Send(filtered_msg_json, 0)
 	}
 }

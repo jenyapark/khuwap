@@ -281,7 +281,7 @@ static Future<bool> cancelRequest(String requestUUID) async {
 }
 
 static Future<bool> acceptRequest(String requestUUID) async {
-  final url = Uri.parse("$baseUrl/exchange/$requestUUID/accept");
+  final url = Uri.parse("$baseUrl/exchange/request/$requestUUID/accept");
 
   final res = await http.patch(url);
 
