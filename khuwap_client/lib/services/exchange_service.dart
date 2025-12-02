@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/exchange_item.dart';
+import '../models/request_item.dart';
 
 class ExchangeService {
   static const baseUrl = "http://localhost:8000";
@@ -56,6 +57,8 @@ class ExchangeService {
       note: raw["note"],
       postUUID: raw['post_uuid'],
       authorId: raw['author_id'],
+      status: raw["status"],
+
   
     );
   }
@@ -133,6 +136,8 @@ print("RAW LIST = $rawList");
 
         postUUID: raw['post_uuid'],
         authorId: raw['author_id'],
+        status: raw["status"],
+
 
       ),
     );
@@ -233,8 +238,90 @@ static Future<bool> createPost({
   return response.statusCode == 200;
 }
 
+static Future<List<RequestItem>> fetchSentRequests(String userId) async {
+  final url = Uri.parse("$baseUrl/exchange/request/sent/$userId");
+
+  final response = await http.get(url);
+
+  if (response.statusCode == 200) {
+    final decoded = json.decode(response.body);
+    final List data = decoded["data"];
+
+    return data.map((item) => RequestItem.fromJson(item)).toList();
+  } else {
+    throw Exception("보낸 요청 조회 실패");
+  }
+}
+
+static Future<Map<String, dynamic>?> getRawByPostUUID(String postUUID) async {
+  final rawList = await fetchExchangeRaw();
+
+  for (var raw in rawList) {
+    if (raw["post_uuid"] == postUUID) {
+      return raw;
+    }
+  }
+  return null;
+}
+
+static Future<ExchangeItem?> requestItemToExchangeItem(RequestItem req) async {
+  final raw = await getRawByPostUUID(req.postUUID);
+  if (raw == null) return null;
+
+  return composeExchangeItem(raw);
+}
+
+static Future<bool> cancelRequest(String requestUUID) async {
+  final url = Uri.parse("$baseUrl/exchange/request/sent/$requestUUID");
+
+  final res = await http.delete(url);
+
+  if (res.statusCode == 200) return true;
+  return false;
+}
+
+static Future<bool> acceptRequest(String requestUUID) async {
+  final url = Uri.parse("$baseUrl/exchange/$requestUUID/accept");
+
+  final res = await http.patch(url);
+
+  if (res.statusCode == 200) return true;
+  return false;
+}
+
+static Future<bool> sendRequest({
+  required String requesterId,
+  required String postUUID,
+}) async {
+  final url = Uri.parse("$baseUrl/exchange/request/");
+
+  final res = await http.post(
+    url,
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode({
+      "requester_id": requesterId,
+      "post_uuid": postUUID,
+    }),
+  );
+  print("response body: ${res.body}");
 
 
+  return res.statusCode == 201;
+}
+
+static Future<List<RequestItem>> listRequests(String postUUID) async {
+    final url = Uri.parse("$baseUrl/exchange/request/list/$postUUID");
+
+    final response = await http.get(url);
+
+    if (response.statusCode != 200) {
+      throw Exception("FAILED TO FETCH REQUEST LIST");
+    }
+
+    final List<dynamic> data = jsonDecode(response.body);
+
+    return data.map((json) => RequestItem.fromJson(json)).toList();
+  }
 
 
   

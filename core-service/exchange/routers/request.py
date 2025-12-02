@@ -13,8 +13,8 @@ from uuid import uuid4
 from datetime import datetime
 import requests
 
-router = APIRouter(prefix="/exchange/request", tags=["exchange-request"])
-CHAT_SERVICE_URL = "http://localhost:8001"
+router = APIRouter(tags=["exchange-request"])
+CHAT_SERVICE_URL = "http://localhost:8080"
 
 #요청 생성
 @router.post("/")
@@ -60,34 +60,10 @@ def create_exchange_request(payload: ExchangeRequestCreate):
 
         conn.commit()
 
-        
-        # chat-service 연동 (예외 없이 상태 코드로 처리)
-    response = requests.post(
-        f"{CHAT_SERVICE_URL}/chat/init",
-        json={
-            "request_uuid": created["request_uuid"],
-            "requester_id": payload.requester_id,
-            "receiver_id": target_post["author_id"],
-            "post_uuid": payload.post_uuid
-        }
-    )
-
-    if response.status_code != 201:
-        # chat-service 가 비정상 응답 보낸 경우
-        print(f"⚠️ chat-service 응답 오류 ({response.status_code}): {response.text}")
-        return error_response(
-            message="교환 요청은 생성되었지만, 채팅방 생성에 실패했습니다.",
-            status_code=502
-        )
-    else:
-        room_info = response.json()
-
-    print(f"chat-service 연동 성공: {response.json()}")
     
     return success_response(
         message = "교환 요청이 전송되었습니다. (채팅방 생성 완료)",
-        data = {"request_uuid": created["request_uuid"],
-                "room_id": room_info},
+        data = {"request_uuid": created["request_uuid"]},
         status_code=201,
         )
 
@@ -150,6 +126,17 @@ def get_sent_requests(user_id: str):
         status_code=200,
     )
 
+@router.get("/list/{post_uuid}")
+def list_requests(post_uuid: str):
+    with engine.connect() as conn:
+        rows = conn.execute(
+            select(exchange_requests)
+            .where(exchange_requests.c.post_uuid == post_uuid)
+        ).mappings().all()
+
+        return rows 
+
+
 #요청 수락
 @router.patch("/{request_uuid}/accept")
 def accept(request_uuid: str):
@@ -188,7 +175,7 @@ def accept(request_uuid: str):
 
         if room_id:
             try:
-                chat_response = requests.patch(f"http://localhost:8001/chat/rooms/{room_id}/deactivate")
+                chat_response = requests.patch(f"http://localhost:8000/chat/rooms/{room_id}/deactivate")
                 if chat_response.status_code == 200:
                     chat_status = "deactivated"
                 else:

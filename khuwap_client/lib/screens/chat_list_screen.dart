@@ -66,7 +66,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         title: Text(
           "메시지",
           style: TextStyle(
-            color: deepRed,
+            color: deepBrown,
             fontWeight: FontWeight.bold,
             fontSize: 22,
           ),

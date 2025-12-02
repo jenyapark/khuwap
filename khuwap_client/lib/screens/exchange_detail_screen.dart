@@ -5,6 +5,7 @@ import '../services/auth_service.dart';
 import '../services/exchange_service.dart';
 import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
+import '../models/request_item.dart';
 
 class ExchangeDetailScreen extends StatefulWidget {
   final String ownedTitle;
@@ -29,6 +30,12 @@ class ExchangeDetailScreen extends StatefulWidget {
   final String authorId;
   final String postUUID;
 
+  final String? requesterId;   
+final String? requestUUID;   
+final String? requestStatus; 
+
+
+
   const ExchangeDetailScreen({
     super.key,
     required this.ownedTitle,
@@ -50,6 +57,9 @@ class ExchangeDetailScreen extends StatefulWidget {
     required this.note,
     required this.authorId,
     required this.postUUID,
+    this.requesterId,     
+    this.requestUUID,     
+    this.requestStatus,   
   });
 
   @override
@@ -58,15 +68,73 @@ class ExchangeDetailScreen extends StatefulWidget {
 
 class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
   late String currentNote;
+String? _requesterId;
+String? _requestStatus;
+RequestItem? myRequest;
+bool loadingReq = true;
+String? _requestUUID;
+bool _loadedRequestState = false;
+String? myId;
 
-  @override
-  void initState() {
-    super.initState();
-    currentNote = widget.note;
+@override
+void initState() {
+  super.initState();
+  currentNote = widget.note;
+
+  AuthService.getUserId().then((id) {
+    setState(() => myId = id);
+    loadRequestState();
+  });
+}
+
+
+ 
+Future<void> loadRequestState() async {
+  if (_loadedRequestState) {
+    print("loadRequestState 이미 실행됨 → 재실행 막음");
+    return;
   }
+  _loadedRequestState = true;
+
+  final userId = await AuthService.getUserId();
+  if (userId == null) {
+    setState(() => loadingReq = false);
+    return;
+  }
+  if (userId == widget.authorId) {
+  print("현재 로그인한 유저는 글쓴이 → 요청 목록 조회(list) 호출");
+
+  final requestList =
+      await ExchangeService.listRequests(widget.postUUID);
+      print("requestUUID:  " + requestList.first.requestUUID);
+      print("requesterid:    " + requestList.first.requesterId);
+      print(requestList.first.status);
+  if (requestList.isNotEmpty) {
+    final first = requestList.first;
+
+    setState(() {
+      _requestUUID = first.requestUUID; 
+          // ← 교환 수락 버튼의 핵심 값
+      _requesterId = first.requesterId;
+      _requestStatus = first.status;    
+      loadingReq = false;
+    });
+  } else {
+    setState(() {
+      loadingReq = false;
+    });
+  }
+  return;
+  }
+}
+
+
+
 
   @override
   Widget build(BuildContext context) {
+    print("DEBUG postUUID=${widget.postUUID}");
+
     const ivory = Color(0xFFFAF8F3);
     const textBrown = Color(0xFF3E2A25);
     const khured = Color(0xFF8B0000);
@@ -124,167 +192,275 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
             const SizedBox(height: 20),
 
             // ---------------- BOTTOM BUTTONS ----------------
-            FutureBuilder<String?>(
-              future: AuthService.getUserId(),
-              builder: (context, snap) {
-                if (!snap.hasData) return const SizedBox.shrink();
-
-                final myId = snap.data!;
-                final isMine = (myId == widget.authorId);
-
-                // 내 글일 때 → 수정 / 삭제
-                if (isMine) {
-                  return Row(
-                    children: [
-                      // 수정
-                      Expanded(
-                        child: Container(
-                          height: 45,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade700,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.white),
-                            onPressed: () async {
-                              final newNote = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => EditExchangePostScreen(
-                                    postUUID: widget.postUUID,
-                                    initialNote: currentNote,
-                                  ),
-                                ),
-                              );
-
-                              if (newNote != null && newNote is String) {
-                                setState(() => currentNote = newNote);
-
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("게시글이 수정되었습니다.")),
-                                );
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 8),
-
-                      // 삭제
-                      Expanded(
-                        child: Container(
-                          height: 45,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF8B0000),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.white),
-                            onPressed: () async {
-                              final confirm = await showDeleteConfirmDialog(context);
-                              if (!confirm) return;
-
-                              final result = await ExchangeService.deletePost(widget.postUUID);
-
-                              if (result) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("게시글이 삭제되었습니다.")),
-                                );
-                                Navigator.pop(context);
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("삭제에 실패했습니다.")),
-                                );
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                }
-
-                // 남의 글일 때 → 교환 요청 / 대화
-                return Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: khured,
-                          minimumSize: const Size(0, 45),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        onPressed: () {},
-                        child: const Text(
-                          "교환 요청",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 8),
-
-                    Expanded(
-                      flex: 3,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: khured,
-                          minimumSize: const Size(0, 45),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        onPressed: () async {
-                          final myId = snap.data!;
-                          final chatProvider = context.read<ChatProvider>();
-
-                          final actualRoomId = await chatProvider.createChatRoom(
-                            postUUID: widget.postUUID,
-                            authorId: widget.authorId,
-                            peerId: myId,
-                          );
-
-                          if (actualRoomId != "-1") {
-                            await chatProvider.loadRooms(myId);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ChatScreen(
-                                  roomId: actualRoomId,
-                                  userId: myId,
-                                  postUUID: widget.postUUID,
-                                  peerId: widget.authorId,
-                                  postTitle: "${widget.ownedTitle} ↔ ${widget.desiredTitle}",
-                                ),
-                              ),
-                            );
-                          }
-                        },
-                        child: const Text(
-                          "대화",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
+            _bottomButtons(context),
           ],
         ),
       ),
     );
   }
+
+
+
+  Widget _bottomButtons(BuildContext context) {
+  const khured = Color(0xFF8B0000);
+
+  // 1) 내가 쓴 글일 때
+  if (myId == widget.authorId) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            // 수정
+            Expanded(
+              child: Container(
+                height: 45,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade700,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.white),
+                  onPressed: () async {
+                    final newNote = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => EditExchangePostScreen(
+                          postUUID: widget.postUUID,
+                          initialNote: currentNote,
+                        ),
+                      ),
+                    );
+
+                    if (newNote != null && newNote is String) {
+                      setState(() => currentNote = newNote);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("게시글이 수정되었습니다.")),
+                      );
+                    }
+                  },
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 8),
+
+            // 삭제
+            Expanded(
+              child: Container(
+                height: 45,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B0000),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.white),
+                  onPressed: () async {
+                    final confirm = await showDeleteConfirmDialog(context);
+                    if (!confirm) return;
+
+                    final result =
+                        await ExchangeService.deletePost(widget.postUUID);
+
+                    if (result) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("게시글이 삭제되었습니다.")),
+                      );
+                      Navigator.pop(context);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("삭제 실패")),
+                      );
+                    }
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 8),
+
+        // 교환 수락 버튼 (글쓴이 + pending)
+        if (_requestStatus == "pending" && _requestUUID != null)
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.shade700,
+              minimumSize: const Size(0, 45),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              final ok = await ExchangeService.acceptRequest(_requestUUID!);
+
+              if (ok) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("교환이 수락되었습니다.")),
+                );
+                Navigator.pop(context);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("교환 수락 실패")),
+                );
+              }
+            },
+            child: const Text("교환 수락", style: TextStyle(color: Colors.white)),
+          ),
+      ],
+    );
+  }
+
+  // 2) 내가 요청자일 때 → 취소 + 대화
+  if (myId == _requesterId && _requestUUID != null) {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey.shade700,
+              minimumSize: const Size(0, 45),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              final ok =
+                  await ExchangeService.cancelRequest(_requestUUID!);
+              if (ok) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("요청이 취소되었습니다.")),
+                );
+                Navigator.pop(context);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("요청 취소 실패")),
+                );
+              }
+            },
+            child: const Text("요청 취소", style: TextStyle(color: Colors.white)),
+          ),
+        ),
+        const SizedBox(width: 8),
+
+        Expanded(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: khured,
+              minimumSize: const Size(0, 45),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              final chatProvider = context.read<ChatProvider>();
+              final roomId = await chatProvider.createChatRoom(
+                postUUID: widget.postUUID,
+                authorId: widget.authorId,
+                peerId: myId!,
+              );
+
+              if (roomId != "-1") {
+                await chatProvider.loadRooms(myId!);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChatScreen(
+                      roomId: roomId,
+                      userId: myId!,
+                      peerId: widget.authorId,
+                      postUUID: widget.postUUID,
+                      postTitle:
+                          "${widget.ownedTitle} ↔ ${widget.desiredTitle}",
+                    ),
+                  ),
+                );
+              }
+            },
+            child: const Text("대화 요청", style: TextStyle(color: Colors.white)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 3) 남의 글일 때 → 교환 요청 + 대화
+  return Row(
+    children: [
+      Expanded(
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: khured,
+            minimumSize: const Size(0, 45),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+          onPressed: () async {
+            final requesterId = myId!;
+            final ok = await ExchangeService.sendRequest(
+              requesterId: requesterId,
+              postUUID: widget.postUUID,
+            );
+
+            if (ok) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("교환 요청을 보냈습니다.")),
+              );
+
+              setState(() {
+                _requesterId = requesterId;
+                _requestStatus = "pending";
+              });
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("요청 실패")),
+              );
+            }
+          },
+          child: const Text("교환 요청",
+              style: TextStyle(color: Colors.white)),
+        ),
+      ),
+
+      const SizedBox(width: 8),
+
+      Expanded(
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: khured,
+            minimumSize: const Size(0, 45),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+          onPressed: () async {
+            final chatProvider = context.read<ChatProvider>();
+            final roomId = await chatProvider.createChatRoom(
+              postUUID: widget.postUUID,
+              authorId: widget.authorId,
+              peerId: myId!,
+            );
+
+            if (roomId != "-1") {
+              await chatProvider.loadRooms(myId!);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChatScreen(
+                    roomId: roomId,
+                    userId: myId!,
+                    peerId: widget.authorId,
+                    postUUID: widget.postUUID,
+                    postTitle:
+                        "${widget.ownedTitle} ↔ ${widget.desiredTitle}",
+                  ),
+                ),
+              );
+            }
+          },
+          child: const Text("대화 요청",
+              style: TextStyle(color: Colors.white)),
+        ),
+      ),
+    ],
+  );
+  }
+
 
   // ---------------- NOTE BOX ----------------
   Widget _buildNoteBox(String note) {
@@ -444,7 +620,7 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
       ),
     );
   }
-}
+
 
 // ---------------- DELETE CONFIRM DIALOG ----------------
 
@@ -528,4 +704,7 @@ Future<bool> showDeleteConfirmDialog(BuildContext context) async {
   );
 
   return result ?? false;
+}
+
+
 }

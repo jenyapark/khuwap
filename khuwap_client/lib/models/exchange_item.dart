@@ -21,6 +21,8 @@ class ExchangeItem {
 
   final String postUUID;
   final String authorId;
+  final String status;
+
 
 
   ExchangeItem({
@@ -43,6 +45,8 @@ class ExchangeItem {
     required this.note,
     required this.postUUID,
     required this.authorId,
+    required this.status,
+
 
   });
 }

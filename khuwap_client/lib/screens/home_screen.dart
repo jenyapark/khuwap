@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:khuwap_client/screens/home_body.dart';
+import 'package:khuwap_client/screens/myrequest_screen.dart';
 import 'package:khuwap_client/screens/timetable_screen.dart';
 import 'package:khuwap_client/screens/mypost_screen.dart';
 import 'package:khuwap_client/screens/chat_list_screen.dart';
 import 'package:khuwap_client/services/auth_service.dart';
+import 'package:khuwap_client/screens/myrequest_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -45,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const HomeBody(),                     
       TimeTableScreen(userId: userId!),    
       ChatListScreen(userId: userId!),
-      const Center(child: Text("Request")),
+      MyRequestScreen(userId: userId!),
       MyPostScreen(userId: userId!)
     ];
 

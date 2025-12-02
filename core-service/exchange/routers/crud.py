@@ -133,3 +133,5 @@ def get_my_exchange_posts(user_id: str):
         message="내 교환글 목록 조회 성공",
         status_code=200
     )
+
+

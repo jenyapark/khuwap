@@ -12,6 +12,11 @@ Widget buildExchangeCard({
   const textColor = Color(0xFF3E2A25);
   const deepRed = Color(0xFF8B0000);
 
+  final bool isCompleted = item.status == "completed";
+
+
+  
+
   String schedule(String d, String s, String e) => "$d  $s-$e";
 
   return Container(
@@ -26,7 +31,9 @@ Widget buildExchangeCard({
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                   color: isCompleted
+                      ? Colors.grey.shade300    
+                      : Colors.white, 
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: borderColor, width: 1),
                 ),
