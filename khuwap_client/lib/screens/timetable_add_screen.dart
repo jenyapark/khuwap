@@ -26,28 +26,19 @@ class _TimeTableAddScreenState extends State<TimeTableAddScreen> {
 
     setState(() => _isLoading = true);
 
-    try {
+    
       final response = await TimeTableService.addTimetable(
         userId: widget.userId,
         courseCode: courseCode,
       );
-
-      if (response == true) {
+      if (response["success"] == true) {
         Navigator.pop(context, true);
-        return;
-      }
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("시간표 추가에 실패했습니다.")));
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("오류 발생: $e")));
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(response["message"])),
+  );
+      
+          }    }
 
   @override
   Widget build(BuildContext context) {

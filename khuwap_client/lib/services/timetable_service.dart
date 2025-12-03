@@ -60,7 +60,7 @@ class TimeTableService {
     return result;
   }
 
-  static Future<bool> addTimetable({
+  static Future<Map<String, dynamic>> addTimetable({
     required String userId,
     required String courseCode,
   }) async {
@@ -72,7 +72,13 @@ class TimeTableService {
       body: jsonEncode(body),
     );
 
-    return response.statusCode == 200;
+    final jsonBody = jsonDecode(response.body);
+
+  return {
+    "success": response.statusCode >= 200 && response.statusCode < 300,
+    "message": jsonBody["message"] ?? "오류가 발생했습니다.",
+  };
+  
   }
 
   static Future<bool> deleteTimetable({
@@ -83,6 +89,6 @@ class TimeTableService {
 
     final response = await http.delete(url);
 
-    return response.statusCode == 200;
-  }
+    return response.statusCode >= 200 && response.statusCode < 300;
+}
 }
