@@ -5,6 +5,8 @@ import '../services/auth_service.dart';
 import 'exchange_detail_screen.dart';
 import '../widgets/exchange_card.dart'; 
 import 'exchange_post_screen.dart';
+import '../screens/home_search_list.dart';
+
 
 
 class HomeBody extends StatelessWidget {
@@ -58,94 +60,12 @@ class HomeBody extends StatelessWidget {
               const SizedBox(height: 20),
 
               // ---------------- SEARCH ----------------
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: deepBrown.withOpacity(0.25), width: 1.2),
-                ),
-                child: TextField(
-                  style: TextStyle(color: deepBrown, fontSize: 15),
-                  decoration: InputDecoration(
-                    icon: Icon(Icons.search, color: deepBrown.withOpacity(0.6)),
-                    border: InputBorder.none,
-                    hintText: "Search for subjects...",
-                    hintStyle: TextStyle(color: deepBrown.withOpacity(0.45)),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // ---------------- LIST VIEW ----------------
-              Expanded(
-                child: FutureBuilder<List<ExchangeItem>>(
-                  future: ExchangeService.fetchComposedList(),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    final list = snapshot.data!;
-
-                    return ListView.builder(
-                      itemCount: list.length,
-                      itemBuilder: (context, index) {
-                        final item = list[index];
-
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ExchangeDetailScreen(
-                                  ownedTitle: item.ownedTitle,
-                                  ownedProfessor: item.ownedProfessor,
-                                  ownedDay: item.ownedDay,
-                                  ownedStart: item.ownedStart,
-                                  ownedEnd: item.ownedEnd,
-                                  ownedCourseCode: item.ownedCourseCode,
-                                  ownedRoom: item.ownedRoom,
-                                  ownedCredit: item.ownedCredit.toString(),
-                                  desiredTitle: item.desiredTitle,
-                                  desiredProfessor: item.desiredProfessor,
-                                  desiredDay: item.desiredDay,
-                                  desiredStart: item.desiredStart,
-                                  desiredEnd: item.desiredEnd,
-                                  desiredCourseCode: item.desiredCourseCode,
-                                  desiredRoom: item.desiredRoom,
-                                  desiredCredit: item.desiredCredit.toString(),
-                                  note: item.note,
-                                  postUUID: item.postUUID,
-                                  authorId: item.authorId,
-                                ),
-                              ),
-                            );
-                          },
-
-                          child: buildExchangeCard(item: item, context: context)
-);
-                      },
-                    );
-                  },
-                ),
-              ),
+              const Expanded(
+                child: HomeSearchList(), 
+          ),
             ],
           ),
         ),
-      ),
-
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: deepRed,
-        shape: const CircleBorder(),
-        onPressed: () {Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const CreateExchangePostScreen(),
-      ),
-    );},
-        child: const Icon(Icons.edit, color: Colors.white),
       ),
     );
   }
