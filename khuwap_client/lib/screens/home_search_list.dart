@@ -87,6 +87,7 @@ class _HomeSearchListState extends State<HomeSearchList> {
                       ),
                     )
                   : ListView.builder(
+                    reverse: true,
                       itemCount: filteredList.length,
                       itemBuilder: (context, index) {
                         final item = filteredList[index];
