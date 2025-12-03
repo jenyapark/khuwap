@@ -14,9 +14,6 @@ Widget buildExchangeCard({
 
   final bool isCompleted = item.status == "completed";
 
-
-  
-
   String schedule(String d, String s, String e) => "$d  $s-$e";
 
   return Container(
@@ -31,9 +28,7 @@ Widget buildExchangeCard({
             children: [
               Container(
                 decoration: BoxDecoration(
-                   color: isCompleted
-                      ? Colors.grey.shade300    
-                      : Colors.white, 
+                  color: isCompleted ? Colors.grey.shade300 : Colors.white,
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: borderColor, width: 1),
                 ),
@@ -48,7 +43,10 @@ Widget buildExchangeCard({
               ),
 
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 20,
+                ),
                 child: Row(
                   children: [
                     // OWNED
@@ -56,9 +54,13 @@ Widget buildExchangeCard({
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("owned",
-                              style: TextStyle(
-                                  fontSize: 13, color: textColor.withOpacity(0.6))),
+                          Text(
+                            "owned",
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: textColor.withOpacity(0.6),
+                            ),
+                          ),
                           const SizedBox(height: 10),
 
                           ConstrainedBox(
@@ -81,9 +83,10 @@ Widget buildExchangeCard({
                           Text(
                             item.ownedProfessor,
                             style: TextStyle(
-                                fontSize: 13,
-                                height: 1.1,
-                                color: textColor.withOpacity(0.8)),
+                              fontSize: 13,
+                              height: 1.1,
+                              color: textColor.withOpacity(0.8),
+                            ),
                           ),
                           Text(
                             schedule(
@@ -92,7 +95,9 @@ Widget buildExchangeCard({
                               item.ownedEnd,
                             ),
                             style: TextStyle(
-                                fontSize: 12, color: textColor.withOpacity(0.65)),
+                              fontSize: 12,
+                              color: textColor.withOpacity(0.65),
+                            ),
                           ),
                         ],
                       ),
@@ -103,9 +108,13 @@ Widget buildExchangeCard({
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text("desired",
-                              style: TextStyle(
-                                  fontSize: 13, color: textColor.withOpacity(0.6))),
+                          Text(
+                            "desired",
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: textColor.withOpacity(0.6),
+                            ),
+                          ),
                           const SizedBox(height: 10),
 
                           ConstrainedBox(
@@ -130,8 +139,9 @@ Widget buildExchangeCard({
                             item.desiredProfessor,
                             textAlign: TextAlign.right,
                             style: TextStyle(
-                                fontSize: 13,
-                                color: textColor.withOpacity(0.8)),
+                              fontSize: 13,
+                              color: textColor.withOpacity(0.8),
+                            ),
                           ),
                           Text(
                             schedule(
@@ -141,7 +151,9 @@ Widget buildExchangeCard({
                             ),
                             textAlign: TextAlign.right,
                             style: TextStyle(
-                                fontSize: 12, color: textColor.withOpacity(0.65)),
+                              fontSize: 12,
+                              color: textColor.withOpacity(0.65),
+                            ),
                           ),
                         ],
                       ),

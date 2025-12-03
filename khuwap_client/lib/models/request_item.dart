@@ -1,5 +1,3 @@
-
-
 class RequestItem {
   final String requestUUID;
   final String requesterId;
@@ -24,7 +22,4 @@ class RequestItem {
       postUUID: json["post_uuid"] ?? "",
     );
   }
-
-
-
 }

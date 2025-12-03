@@ -41,7 +41,10 @@ class _HomeSearchListState extends State<HomeSearchList> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: deepBrown.withOpacity(0.25), width: 1.2),
+                border: Border.all(
+                  color: deepBrown.withOpacity(0.25),
+                  width: 1.2,
+                ),
               ),
               child: TextField(
                 style: TextStyle(color: deepBrown, fontSize: 15),
@@ -55,11 +58,19 @@ class _HomeSearchListState extends State<HomeSearchList> {
                   setState(() {
                     searchQuery = value.toLowerCase();
                     filteredList = originalList.where((item) {
-                      return item.ownedTitle.toLowerCase().contains(searchQuery) ||
-                             item.ownedProfessor.toLowerCase().contains(searchQuery) ||
-                             item.ownedCourseCode.toLowerCase().contains(searchQuery) ||
-                             item.desiredTitle.toLowerCase().contains(searchQuery) ||
-                             item.note.toLowerCase().contains(searchQuery);
+                      return item.ownedTitle.toLowerCase().contains(
+                            searchQuery,
+                          ) ||
+                          item.ownedProfessor.toLowerCase().contains(
+                            searchQuery,
+                          ) ||
+                          item.ownedCourseCode.toLowerCase().contains(
+                            searchQuery,
+                          ) ||
+                          item.desiredTitle.toLowerCase().contains(
+                            searchQuery,
+                          ) ||
+                          item.note.toLowerCase().contains(searchQuery);
                     }).toList();
                   });
                 },
@@ -109,7 +120,10 @@ class _HomeSearchListState extends State<HomeSearchList> {
                               ),
                             );
                           },
-                          child: buildExchangeCard(item: item, context: context),
+                          child: buildExchangeCard(
+                            item: item,
+                            context: context,
+                          ),
                         );
                       },
                     ),

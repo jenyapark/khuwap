@@ -8,9 +8,7 @@ class ExchangeService {
 
   // 교환글 목록 받아오기
   static Future<List<dynamic>> fetchExchangeRaw() async {
-    final res = await http.get(
-      Uri.parse("$baseUrl/exchange/list"),
-    );
+    final res = await http.get(Uri.parse("$baseUrl/exchange/list"));
 
     if (res.statusCode != 200) return [];
 
@@ -58,8 +56,6 @@ class ExchangeService {
       postUUID: raw['post_uuid'],
       authorId: raw['author_id'],
       status: raw["status"],
-
-  
     );
   }
 
@@ -79,114 +75,109 @@ class ExchangeService {
   }
 
   // 내 글 목록 RAW 데이터
-static Future<List<dynamic>> fetchMyPostsRaw(String userId) async {
-  final res = await http.get(
-    Uri.parse("$baseUrl/exchange/mylist/$userId"),
-  );
+  static Future<List<dynamic>> fetchMyPostsRaw(String userId) async {
+    final res = await http.get(Uri.parse("$baseUrl/exchange/mylist/$userId"));
 
-  if (res.statusCode != 200) return [];
+    if (res.statusCode != 200) return [];
 
-  final body = jsonDecode(res.body);
+    final body = jsonDecode(res.body);
 
-   return body["data"] ?? [];
-}
+    return body["data"] ?? [];
+  }
 
-static Future<List<ExchangeItem>> fetchMyPosts(String userId) async {
-  final List<Map<String, dynamic>> rawList =
-      List<Map<String, dynamic>>.from(await fetchMyPostsRaw(userId));
-
-print("RAW LIST = $rawList");
-  List<ExchangeItem> items = [];
-
-  for (final raw in rawList) {
-    print("RAW ITEM = $raw");      
-
-    print("current_course = ${raw['current_course']}");   
-    print("desired_course = ${raw['desired_course']}");
-    final currentCode = raw['current_course'] as String;
-    final desiredCode = raw['desired_course'] as String;
-
-    // 과목 상세 정보 가져오기
-    final currentDetail =
-        await fetchCourseDetail(currentCode) as Map<String, dynamic>;
-    final desiredDetail =
-        await fetchCourseDetail(desiredCode) as Map<String, dynamic>;
-
-    items.add(
-      ExchangeItem(
-        ownedTitle: currentDetail['course_name'],         
-        ownedProfessor: currentDetail['professor'],
-        ownedDay: currentDetail['day_of_week'],            
-        ownedStart: currentDetail['start_time'],           
-        ownedEnd: currentDetail['end_time'],               
-        ownedCourseCode: currentDetail['course_code'],
-        ownedRoom: currentDetail['room'],
-        ownedCredit: currentDetail['credit'],
-
-        desiredTitle: desiredDetail['course_name'],        
-        desiredProfessor: desiredDetail['professor'],
-        desiredDay: desiredDetail['day_of_week'],        
-        desiredStart: desiredDetail['start_time'],         
-        desiredEnd: desiredDetail['end_time'],             
-        desiredCourseCode: desiredDetail['course_code'],
-        desiredRoom: desiredDetail['room'],
-        desiredCredit: desiredDetail['credit'],
-
-        note: raw['note'],
-
-        postUUID: raw['post_uuid'],
-        authorId: raw['author_id'],
-        status: raw["status"],
-
-
-      ),
+  static Future<List<ExchangeItem>> fetchMyPosts(String userId) async {
+    final List<Map<String, dynamic>> rawList = List<Map<String, dynamic>>.from(
+      await fetchMyPostsRaw(userId),
     );
+
+    print("RAW LIST = $rawList");
+    List<ExchangeItem> items = [];
+
+    for (final raw in rawList) {
+      print("RAW ITEM = $raw");
+
+      print("current_course = ${raw['current_course']}");
+      print("desired_course = ${raw['desired_course']}");
+      final currentCode = raw['current_course'] as String;
+      final desiredCode = raw['desired_course'] as String;
+
+      // 과목 상세 정보 가져오기
+      final currentDetail =
+          await fetchCourseDetail(currentCode) as Map<String, dynamic>;
+      final desiredDetail =
+          await fetchCourseDetail(desiredCode) as Map<String, dynamic>;
+
+      items.add(
+        ExchangeItem(
+          ownedTitle: currentDetail['course_name'],
+          ownedProfessor: currentDetail['professor'],
+          ownedDay: currentDetail['day_of_week'],
+          ownedStart: currentDetail['start_time'],
+          ownedEnd: currentDetail['end_time'],
+          ownedCourseCode: currentDetail['course_code'],
+          ownedRoom: currentDetail['room'],
+          ownedCredit: currentDetail['credit'],
+
+          desiredTitle: desiredDetail['course_name'],
+          desiredProfessor: desiredDetail['professor'],
+          desiredDay: desiredDetail['day_of_week'],
+          desiredStart: desiredDetail['start_time'],
+          desiredEnd: desiredDetail['end_time'],
+          desiredCourseCode: desiredDetail['course_code'],
+          desiredRoom: desiredDetail['room'],
+          desiredCredit: desiredDetail['credit'],
+
+          note: raw['note'],
+
+          postUUID: raw['post_uuid'],
+          authorId: raw['author_id'],
+          status: raw["status"],
+        ),
+      );
+    }
+
+    return items;
   }
 
-  return items;
-}
-
-String buildChatRoomTitle(ExchangeItem post) {
-  if (post.ownedTitle.isEmpty || post.desiredTitle.isEmpty) {
-    return "과목 정보 없음";
-  }
-  return "${post.ownedTitle} ↔ ${post.desiredTitle}";
-}
-
-// 특정 교환글 RAW 조회
-static Future<Map<String, dynamic>?> fetchPostRaw(String postUUID) async {
-  final url = Uri.parse("http://localhost:8000/exchange/$postUUID");
-
-  final res = await http.get(url);
-
-  if (res.statusCode != 200) {
-    print("Failed to load exchange post raw: ${res.body}");
-    return null;
+  String buildChatRoomTitle(ExchangeItem post) {
+    if (post.ownedTitle.isEmpty || post.desiredTitle.isEmpty) {
+      return "과목 정보 없음";
+    }
+    return "${post.ownedTitle} ↔ ${post.desiredTitle}";
   }
 
-  final data = jsonDecode(res.body);
-  return data["data"]; // current_course / desired_course 포함된 RAW 데이터
-}
+  // 특정 교환글 RAW 조회
+  static Future<Map<String, dynamic>?> fetchPostRaw(String postUUID) async {
+    final url = Uri.parse("http://localhost:8000/exchange/$postUUID");
 
-static Future<String?> fetchAuthorId(String postUUID) async {
-  final url = Uri.parse("http://localhost:8000/exchange/post/$postUUID");
-  final res = await http.get(url);
+    final res = await http.get(url);
 
-  if (res.statusCode != 200) return null;
+    if (res.statusCode != 200) {
+      print("Failed to load exchange post raw: ${res.body}");
+      return null;
+    }
 
-  final data = jsonDecode(res.body);
-  return data["data"]["author_id"];
-}
+    final data = jsonDecode(res.body);
+    return data["data"]; // current_course / desired_course 포함된 RAW 데이터
+  }
 
-// 게시글 삭제
+  static Future<String?> fetchAuthorId(String postUUID) async {
+    final url = Uri.parse("http://localhost:8000/exchange/post/$postUUID");
+    final res = await http.get(url);
+
+    if (res.statusCode != 200) return null;
+
+    final data = jsonDecode(res.body);
+    return data["data"]["author_id"];
+  }
+
+  // 게시글 삭제
   static Future<bool> deletePost(String postUuid) async {
     final url = Uri.parse("$baseUrl/exchange/$postUuid");
 
     final response = await http.delete(
       url,
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: {"Content-Type": "application/json"},
     );
 
     if (response.statusCode == 200) {
@@ -197,8 +188,7 @@ static Future<String?> fetchAuthorId(String postUUID) async {
     }
   }
 
-
-static Future<bool> createPost({
+  static Future<bool> createPost({
     required String authorId,
     required String ownedCourseCode,
     required String desiredCourseCode,
@@ -223,93 +213,89 @@ static Future<bool> createPost({
   }
 
   static Future<bool> updatePost(String postUUID, String newNote) async {
-  final url = Uri.parse("$baseUrl/exchange/$postUUID");
+    final url = Uri.parse("$baseUrl/exchange/$postUUID");
 
-  final body = {
-    "note": newNote,
-  };
+    final body = {"note": newNote};
 
-  final response = await http.patch(
-    url,
-    headers: {"Content-Type": "application/json"},
-    body: jsonEncode(body),
-  );
+    final response = await http.patch(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(body),
+    );
 
-  return response.statusCode == 200;
-}
-
-static Future<List<RequestItem>> fetchSentRequests(String userId) async {
-  final url = Uri.parse("$baseUrl/exchange/request/sent/$userId");
-
-  final response = await http.get(url);
-
-  if (response.statusCode == 200) {
-    final decoded = json.decode(response.body);
-    final List data = decoded["data"];
-
-    return data.map((item) => RequestItem.fromJson(item)).toList();
-  } else {
-    throw Exception("보낸 요청 조회 실패");
+    return response.statusCode == 200;
   }
-}
 
-static Future<Map<String, dynamic>?> getRawByPostUUID(String postUUID) async {
-  final rawList = await fetchExchangeRaw();
+  static Future<List<RequestItem>> fetchSentRequests(String userId) async {
+    final url = Uri.parse("$baseUrl/exchange/request/sent/$userId");
 
-  for (var raw in rawList) {
-    if (raw["post_uuid"] == postUUID) {
-      return raw;
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final decoded = json.decode(response.body);
+      final List data = decoded["data"];
+
+      return data.map((item) => RequestItem.fromJson(item)).toList();
+    } else {
+      throw Exception("보낸 요청 조회 실패");
     }
   }
-  return null;
-}
 
-static Future<ExchangeItem?> requestItemToExchangeItem(RequestItem req) async {
-  final raw = await getRawByPostUUID(req.postUUID);
-  if (raw == null) return null;
+  static Future<Map<String, dynamic>?> getRawByPostUUID(String postUUID) async {
+    final rawList = await fetchExchangeRaw();
 
-  return composeExchangeItem(raw);
-}
+    for (var raw in rawList) {
+      if (raw["post_uuid"] == postUUID) {
+        return raw;
+      }
+    }
+    return null;
+  }
 
-static Future<bool> cancelRequest(String requestUUID) async {
-  final url = Uri.parse("$baseUrl/exchange/request/sent/$requestUUID");
+  static Future<ExchangeItem?> requestItemToExchangeItem(
+    RequestItem req,
+  ) async {
+    final raw = await getRawByPostUUID(req.postUUID);
+    if (raw == null) return null;
 
-  final res = await http.delete(url);
+    return composeExchangeItem(raw);
+  }
 
-  if (res.statusCode == 200) return true;
-  return false;
-}
+  static Future<bool> cancelRequest(String requestUUID) async {
+    final url = Uri.parse("$baseUrl/exchange/request/sent/$requestUUID");
 
-static Future<bool> acceptRequest(String requestUUID) async {
-  final url = Uri.parse("$baseUrl/exchange/request/$requestUUID/accept");
+    final res = await http.delete(url);
 
-  final res = await http.patch(url);
+    if (res.statusCode == 200) return true;
+    return false;
+  }
 
-  if (res.statusCode == 200) return true;
-  return false;
-}
+  static Future<bool> acceptRequest(String requestUUID) async {
+    final url = Uri.parse("$baseUrl/exchange/request/$requestUUID/accept");
 
-static Future<bool> sendRequest({
-  required String requesterId,
-  required String postUUID,
-}) async {
-  final url = Uri.parse("$baseUrl/exchange/request/");
+    final res = await http.patch(url);
 
-  final res = await http.post(
-    url,
-    headers: {"Content-Type": "application/json"},
-    body: jsonEncode({
-      "requester_id": requesterId,
-      "post_uuid": postUUID,
-    }),
-  );
-  print("response body: ${res.body}");
+    if (res.statusCode == 200) return true;
+    return false;
+  }
 
+  static Future<bool> sendRequest({
+    required String requesterId,
+    required String postUUID,
+  }) async {
+    final url = Uri.parse("$baseUrl/exchange/request/");
 
-  return res.statusCode == 201;
-}
+    final res = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"requester_id": requesterId, "post_uuid": postUUID}),
+    );
+    print("response body: ${res.body}");
 
-static Future<List<RequestItem>> listRequests(String postUUID) async {
+    return res.statusCode == 201;
+  }
+
+  static Future<List<RequestItem>> listRequests(String postUUID) async {
     final url = Uri.parse("$baseUrl/exchange/request/list/$postUUID");
 
     final response = await http.get(url);
@@ -322,7 +308,4 @@ static Future<List<RequestItem>> listRequests(String postUUID) async {
 
     return data.map((json) => RequestItem.fromJson(json)).toList();
   }
-
-
-  
 }

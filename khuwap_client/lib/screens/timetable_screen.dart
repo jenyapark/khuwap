@@ -5,12 +5,13 @@ import '../screens/timetable_add_screen.dart';
 import '../screens/timetable_delete_screen.dart';
 
 class TimeTableScreen extends StatefulWidget {
-  final String userId;  // 로그인한 사용자 학번
+  final String userId; // 로그인한 사용자 학번
   const TimeTableScreen({super.key, required this.userId});
 
   @override
   State<TimeTableScreen> createState() => _TimeTableScreenState();
 }
+
 class _TimeTableScreenState extends State<TimeTableScreen> {
   @override
   Widget build(BuildContext context) {
@@ -31,40 +32,39 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
           ),
         ),
         actions: [
-    IconButton(
-      icon: const Icon(Icons.add_circle_rounded, size: 28),
-      color: const Color(0xFF3E2A25),
-      onPressed: () async {
-        final added = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => TimeTableAddScreen(userId: widget.userId),
+          IconButton(
+            icon: const Icon(Icons.add_circle_rounded, size: 28),
+            color: const Color(0xFF3E2A25),
+            onPressed: () async {
+              final added = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => TimeTableAddScreen(userId: widget.userId),
+                ),
+              );
+
+              if (added == true) {
+                setState(() {});
+              }
+            },
           ),
-        );
+          IconButton(
+            icon: const Icon(Icons.remove_circle_rounded, size: 28),
+            color: const Color(0xFF7A0E1D),
+            onPressed: () async {
+              final deleted = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => TimeTableDeleteScreen(userId: widget.userId),
+                ),
+              );
 
-        if (added == true) {
-          setState(() {});
-        }
-      },
-    ),
-IconButton(
-      icon: const Icon(Icons.remove_circle_rounded, size: 28),
-      color: const Color(0xFF7A0E1D), 
-      onPressed: () async {
-        final deleted = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => TimeTableDeleteScreen(userId: widget.userId),
+              if (deleted == true) {
+                setState(() {});
+              }
+            },
           ),
-        );
-
-        if (deleted == true) {
-          setState(() {});
-        }
-      },
-    ),
-
-  ],
+        ],
       ),
 
       body: FutureBuilder<List<TimeTableItem>>(
@@ -79,10 +79,7 @@ IconButton(
             return const Center(
               child: Text(
                 "등록된 시간표가 없습니다.",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF3E2A25),
-                ),
+                style: TextStyle(fontSize: 16, color: Color(0xFF3E2A25)),
               ),
             );
           }
@@ -96,7 +93,7 @@ IconButton(
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: _buildSubjectDetailCard(
-                  label: "owned",                
+                  label: "owned",
                   title: item.courseName,
                   courseCode: item.courseCode,
                   professor: item.professor,
@@ -114,8 +111,6 @@ IconButton(
       ),
     );
   }
-
-
 
   // ============== SUBJECT DETAIL CARD ==================
   Widget _buildSubjectDetailCard({
@@ -154,10 +149,7 @@ IconButton(
             decoration: BoxDecoration(
               color: khured.withOpacity(0.08),
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                color: khured.withOpacity(0.25),
-                width: 1.0,
-              ),
+              border: Border.all(color: khured.withOpacity(0.25), width: 1.0),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -233,19 +225,10 @@ IconButton(
           // ---------- TIME ----------
           Text(
             "$day   $start~$end($room) ${credit}학점",
-            style: TextStyle(
-              color: textBrown.withOpacity(0.55),
-              fontSize: 14,
-            ),
+            style: TextStyle(color: textBrown.withOpacity(0.55), fontSize: 14),
           ),
         ],
       ),
     );
   }
 }
-
-
-
-
-
-

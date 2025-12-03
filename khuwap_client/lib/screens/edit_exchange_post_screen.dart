@@ -40,10 +40,7 @@ class _EditExchangePostScreenState extends State<EditExchangePostScreen> {
         iconTheme: const IconThemeData(color: deepBrown),
         title: const Text(
           "메모 수정",
-          style: TextStyle(
-            color: deepBrown,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: deepBrown, fontWeight: FontWeight.bold),
         ),
       ),
 
@@ -107,10 +104,7 @@ class _EditExchangePostScreenState extends State<EditExchangePostScreen> {
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text(
                           "수정 완료",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
+                          style: TextStyle(color: Colors.white, fontSize: 16),
                         ),
                 ),
               ),

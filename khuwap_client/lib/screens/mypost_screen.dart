@@ -54,7 +54,10 @@ class MyPostScreen extends StatelessWidget {
               final item = items[index];
 
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: GestureDetector(
                   onTap: () {
                     Navigator.push(

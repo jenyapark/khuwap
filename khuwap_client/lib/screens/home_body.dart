@@ -3,9 +3,10 @@ import 'package:khuwap_client/models/exchange_item.dart';
 import '../services/exchange_service.dart';
 import '../services/auth_service.dart';
 import 'exchange_detail_screen.dart';
-import '../widgets/exchange_card.dart'; 
+import '../widgets/exchange_card.dart';
 import 'exchange_post_screen.dart';
 import '../screens/home_search_list.dart';
+import '../screens/my_info_screen.dart';
 
 class HomeBody extends StatelessWidget {
   const HomeBody({super.key});
@@ -40,41 +41,43 @@ class HomeBody extends StatelessWidget {
                   ),
                   const Spacer(),
                   GestureDetector(
-      onTap: () async {
-        await AuthService.logout();
+                    onTap: () async {
+  final userId = await AuthService.getUserId();
+  if (userId == null) return;
 
-        if (!context.mounted) return;
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          "/login",
-          (route) => false,
-        );
-      },
-      child: Icon(Icons.person_outline, color: deepBrown, size: 30),
+  if (!context.mounted) return;
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => MyInfoScreen(userId: userId),
     ),
-  
+  );
+},
+
+                    child: Icon(
+                      Icons.person_outline,
+                      color: deepBrown,
+                      size: 30,
+                    ),
+                  ),
                 ],
               ),
 
               const SizedBox(height: 20),
 
               // ---------------- SEARCH ----------------
-              const Expanded(
-                child: HomeSearchList(), 
-          ),
+              const Expanded(child: HomeSearchList()),
             ],
           ),
         ),
       ),
-        floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton(
         backgroundColor: deepRed,
         shape: const CircleBorder(),
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => const CreateExchangePostScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const CreateExchangePostScreen()),
           );
         },
         child: const Icon(Icons.edit, color: Colors.white),

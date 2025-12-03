@@ -38,17 +38,15 @@ class _HomeScreenState extends State<HomeScreen> {
     const deepBrown = Color(0xFF4A2A25);
 
     if (userId == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final screens = [
-      const HomeBody(),                     
-      TimeTableScreen(userId: userId!),    
+      const HomeBody(),
+      TimeTableScreen(userId: userId!),
       ChatListScreen(userId: userId!),
       MyRequestScreen(userId: userId!),
-      MyPostScreen(userId: userId!)
+      MyPostScreen(userId: userId!),
     ];
 
     return Scaffold(
@@ -64,10 +62,22 @@ class _HomeScreenState extends State<HomeScreen> {
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: "Schedule"),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: "Message"),
-          BottomNavigationBarItem(icon: Icon(Icons.swap_horiz), label: "Request"),
-          BottomNavigationBarItem(icon: Icon(Icons.description_outlined), label: "My Post"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_month),
+            label: "Schedule",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline),
+            label: "Message",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.swap_horiz),
+            label: "Request",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.description_outlined),
+            label: "My Post",
+          ),
         ],
       ),
     );

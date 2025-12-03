@@ -56,13 +56,17 @@ class MyRequestScreen extends StatelessWidget {
               final req = requestItems[index];
 
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
 
                 child: FutureBuilder<ExchangeItem?>(
-                future: ExchangeService.requestItemToExchangeItem(req),
+                  future: ExchangeService.requestItemToExchangeItem(req),
 
                   builder: (context, postSnapshot) {
-                    if (postSnapshot.connectionState == ConnectionState.waiting) {
+                    if (postSnapshot.connectionState ==
+                        ConnectionState.waiting) {
                       return Container(
                         height: 140,
                         alignment: Alignment.center,
@@ -101,18 +105,15 @@ class MyRequestScreen extends StatelessWidget {
                               note: post.note,
                               postUUID: req.postUUID,
                               authorId: post.authorId,
-                              requesterId: req.requesterId,  
-                              requestUUID: req.requestUUID,  
-                              requestStatus: req.status,   
+                              requesterId: req.requesterId,
+                              requestUUID: req.requestUUID,
+                              requestStatus: req.status,
                             ),
                           ),
                         );
                       },
 
-                      child: buildExchangeCard(
-                        item: post,
-                        context: context,
-                      ),
+                      child: buildExchangeCard(item: post, context: context),
                     );
                   },
                 ),

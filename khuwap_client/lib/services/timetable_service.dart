@@ -7,9 +7,7 @@ class TimeTableService {
 
   //사용자 시간표 raw 목록 가져오기
   static Future<List<dynamic>> fetchRawTimetable(String userId) async {
-    final res = await http.get(
-      Uri.parse("$baseUrl/schedules/list/$userId"),
-    );
+    final res = await http.get(Uri.parse("$baseUrl/schedules/list/$userId"));
 
     if (res.statusCode != 200) return [];
 
@@ -17,7 +15,7 @@ class TimeTableService {
     return body["data"]; // [{course_code: "..."} ...]
   }
 
-  // 학수번호 통해서 과목 상세 요청 
+  // 학수번호 통해서 과목 상세 요청
   static Future<Map<String, dynamic>?> fetchCourseDetail(String code) async {
     final res = await http.get(
       Uri.parse("$baseUrl/courses/detail?course_code=$code"),
@@ -46,7 +44,9 @@ class TimeTableService {
   }
 
   // 최종 시간표 리스트 반환
-  static Future<List<TimeTableItem>> fetchComposedTimetable(String userId) async {
+  static Future<List<TimeTableItem>> fetchComposedTimetable(
+    String userId,
+  ) async {
     final rawList = await fetchRawTimetable(userId);
     List<TimeTableItem> result = [];
 
@@ -64,10 +64,7 @@ class TimeTableService {
     required String userId,
     required String courseCode,
   }) async {
-    final body = {
-      "user_id": userId,
-      "course_code": courseCode,
-    };
+    final body = {"user_id": userId, "course_code": courseCode};
 
     final response = await http.post(
       Uri.parse("$baseUrl/schedules/"),
@@ -84,9 +81,8 @@ class TimeTableService {
   }) async {
     final url = Uri.parse("$baseUrl/schedules/$userId/$courseCode");
 
-  final response = await http.delete(url);
+    final response = await http.delete(url);
 
-  return response.statusCode == 200;
+    return response.statusCode == 200;
   }
-
 }

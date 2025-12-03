@@ -8,15 +8,12 @@ class ChatWebSocketService {
     required String userId,
     required void Function(Map<String, dynamic>) onMessage,
   }) {
-
     final wsUrl = Uri(
       scheme: "ws",
       host: "localhost",
       port: 8080,
       path: "/ws",
-      queryParameters: {
-        "user_id": userId,
-      },
+      queryParameters: {"user_id": userId},
     );
 
     print("WS CONNECT URI => $wsUrl");
@@ -57,7 +54,7 @@ class ChatWebSocketService {
     final msg = {
       "sender_id": senderId,
       "post_uuid": postUUID,
-      "room_id" : roomId,
+      "room_id": roomId,
       "peer_id": peerId,
       "content": content,
     };
@@ -69,4 +66,3 @@ class ChatWebSocketService {
     _channel = null;
   }
 }
-

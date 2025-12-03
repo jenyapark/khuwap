@@ -23,8 +23,6 @@ class ExchangeItem {
   final String authorId;
   final String status;
 
-
-
   ExchangeItem({
     required this.ownedTitle,
     required this.ownedProfessor,
@@ -46,7 +44,5 @@ class ExchangeItem {
     required this.postUUID,
     required this.authorId,
     required this.status,
-
-
   });
 }

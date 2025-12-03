@@ -6,7 +6,8 @@ class CreateExchangePostScreen extends StatefulWidget {
   const CreateExchangePostScreen({super.key});
 
   @override
-  State<CreateExchangePostScreen> createState() => _CreateExchangePostScreenState();
+  State<CreateExchangePostScreen> createState() =>
+      _CreateExchangePostScreenState();
 }
 
 class _CreateExchangePostScreenState extends State<CreateExchangePostScreen> {
@@ -32,10 +33,7 @@ class _CreateExchangePostScreenState extends State<CreateExchangePostScreen> {
         centerTitle: true,
         title: const Text(
           "교환글 작성",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: deepRed,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: deepRed),
         ),
         iconTheme: const IconThemeData(color: deepRed),
       ),
@@ -93,7 +91,10 @@ class _CreateExchangePostScreenState extends State<CreateExchangePostScreen> {
                         },
                   child: loading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("등록하기", style: TextStyle(fontSize: 16, color: Colors.white,)),
+                      : const Text(
+                          "등록하기",
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
                 ),
               ),
             ],
@@ -103,8 +104,11 @@ class _CreateExchangePostScreenState extends State<CreateExchangePostScreen> {
     );
   }
 
-  Widget buildTextField(String label, Function(String) onSaved,
-      {int maxLines = 1}) {
+  Widget buildTextField(
+    String label,
+    Function(String) onSaved, {
+    int maxLines = 1,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
@@ -115,9 +119,8 @@ class _CreateExchangePostScreenState extends State<CreateExchangePostScreen> {
           labelStyle: const TextStyle(color: Color(0xFF4A2A25)),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         ),
-        validator: (value) => (value == null || value.trim().isEmpty)
-            ? "값을 입력해주세요"
-            : null,
+        validator: (value) =>
+            (value == null || value.trim().isEmpty) ? "값을 입력해주세요" : null,
         onChanged: onSaved,
       ),
     );

@@ -4,10 +4,7 @@ import '../services/timetable_service.dart';
 class TimeTableAddScreen extends StatefulWidget {
   final String userId;
 
-  const TimeTableAddScreen({
-    super.key,
-    required this.userId,
-  });
+  const TimeTableAddScreen({super.key, required this.userId});
 
   @override
   State<TimeTableAddScreen> createState() => _TimeTableAddScreenState();
@@ -21,9 +18,9 @@ class _TimeTableAddScreenState extends State<TimeTableAddScreen> {
     final courseCode = _courseCodeController.text.trim();
 
     if (courseCode.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("과목 코드를 입력해주세요.")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("과목 코드를 입력해주세요.")));
       return;
     }
 
@@ -40,13 +37,13 @@ class _TimeTableAddScreenState extends State<TimeTableAddScreen> {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("시간표 추가에 실패했습니다.")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("시간표 추가에 실패했습니다.")));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("오류 발생: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("오류 발생: $e")));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -80,7 +77,6 @@ class _TimeTableAddScreenState extends State<TimeTableAddScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // ---------------- 사용자 ID ----------------
               Text(
                 "사용자 ID",
@@ -94,7 +90,10 @@ class _TimeTableAddScreenState extends State<TimeTableAddScreen> {
 
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
@@ -130,8 +129,10 @@ class _TimeTableAddScreenState extends State<TimeTableAddScreen> {
                   hintStyle: TextStyle(color: deepBrown.withOpacity(0.45)),
                   filled: true,
                   fillColor: Colors.white,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: const BorderSide(color: Color(0xFFE2E2E2)),

@@ -23,9 +23,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("교환글 작성"),
-      ),
+      appBar: AppBar(title: const Text("교환글 작성")),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -109,7 +107,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
 
       // 생성 성공 코드: 201
       if (response.statusCode == 201) {
-        Navigator.pop(context, true); 
+        Navigator.pop(context, true);
       } else {
         print("Create Failed: ${response.body}");
       }

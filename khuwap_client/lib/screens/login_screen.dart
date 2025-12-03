@@ -46,7 +46,10 @@ class _LoginScreenState extends State<LoginScreen> {
         final user = body["data"];
 
         // 서버 응답에서 user 정보 저장
-        await secureStorage.write(key: "user_id", value: user["user_id"].toString());
+        await secureStorage.write(
+          key: "user_id",
+          value: user["user_id"].toString(),
+        );
         await secureStorage.write(key: "username", value: user["username"]);
         await secureStorage.write(key: "email", value: user["email"]);
 
@@ -116,9 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     // 로그인 성공 후 홈 화면으로 이동
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => const HomeScreen(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const HomeScreen()),
                     );
                   }
                 },

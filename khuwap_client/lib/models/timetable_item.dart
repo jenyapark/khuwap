@@ -1,12 +1,12 @@
 class TimeTableItem {
-  final String courseCode;     
-  final String courseName;     
-  final String professor;      
-  final String day;           
-  final String startTime;      
-  final String endTime;  
-  final String room;      
-  final int credit;            
+  final String courseCode;
+  final String courseName;
+  final String professor;
+  final String day;
+  final String startTime;
+  final String endTime;
+  final String room;
+  final int credit;
 
   TimeTableItem({
     required this.courseCode,
