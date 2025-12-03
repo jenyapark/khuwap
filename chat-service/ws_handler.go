@@ -37,10 +37,10 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userConns[userID] = conn
-	userConnsMutex.Unlock() // 맵 접근이 끝났으므로 락을 해제합니다.
+	userConnsMutex.Unlock()
 
 	fmt.Println("User registered:", userID)
-	registerUserRooms(userID) // 방 등록은 락 바깥에서 호출해도 무방하다고 가정
+	registerUserRooms(userID)
 
 	// 연결 종료
 	defer func() {

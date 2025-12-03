@@ -248,9 +248,7 @@ void _handleMessage(Map<String, dynamic> data) {
           (room) => room.roomId == openedRoomId,
         );
     } catch (e) {
-        // rooms 리스트에서 해당 방 ID를 찾지 못했을 때 'Bad state: No element' 오류 발생
         print(">>> [ChatProvider.send] ERROR: Room ID $openedRoomId not found in rooms list. Aborting message send.");
-        // 사용자에게 메시지 표시 등 추가 조치 가능
         return; 
     }
 
@@ -289,8 +287,6 @@ Future<String> createChatRoom({
         required String authorId,
         required String peerId,
     }) async {
-        // 1. API 엔드포인트 및 URL 설정
-        // 실제 API URL로 대체해야 합니다. (예: http://localhost:8000)
         const String baseUrl = "http://localhost:8000"; 
         final Map<String, dynamic> body = {
             "post_uuid": postUUID,
@@ -299,8 +295,6 @@ Future<String> createChatRoom({
         };
         final uri = Uri.parse('$baseUrl/chat/room/create').replace(
         queryParameters: {
-            // Map<String, dynamic>을 Map<String, String>으로 변환해야 함
-            // Uri.replace(queryParameters)는 Map<String, String>을 기대합니다.
             'post_uuid': postUUID,
             'author_id': authorId,
             'peer_id': peerId,
@@ -313,7 +307,6 @@ Future<String> createChatRoom({
                 uri,
                 headers: {
                     'Content-Type': 'application/json',
-                    // 'Authorization': 'Bearer YOUR_TOKEN_IF_NEEDED', // 토큰이 필요하면 추가
                 },
                 body: json.encode(body),
             );
@@ -325,10 +318,6 @@ Future<String> createChatRoom({
                 // 5. 'room_id' 추출 및 반환
                 final String roomId = responseData['room_id'] as String;
                 print(">>> Chat Room created successfully. Room ID: $roomId");
-
-                // 🚨 방이 생성되면, Provider 내부의 방 목록(userRooms)을 업데이트하는 로직도
-                // 이쯤에서 추가해야 할 수 있습니다. (예: loadChatRooms())
-
                 return roomId;
             } else {
                 // 200 OK가 아닌 경우 (404, 500 등)

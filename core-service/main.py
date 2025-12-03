@@ -9,6 +9,7 @@ from exchange.routers.request import router as exchange_request_router
 from chat.routers.chat_router import router as chat_router
 from fastapi.routing import APIRoute
 from fastapi.middleware.cors import CORSMiddleware
+from common.seed_courses import seed_courses
 
 app = FastAPI(title="Core Service")
 app.add_middleware(
@@ -18,6 +19,10 @@ app.add_middleware(
     allow_methods=["*"],          # 모든 HTTP 메서드 허용 
     allow_headers=["*"],          # 모든 헤더 허용
 )
+
+@app.on_event("startup")
+def startup_event():
+    seed_courses()
 
 @app.get("/healthz")
 async def health_check():
