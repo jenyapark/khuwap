@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import '../services/timetable_service.dart';
 import '../models/timetable_item.dart';
+import '../screens/timetable_add_screen.dart';
+import '../screens/timetable_delete_screen.dart';
 
-class TimeTableScreen extends StatelessWidget {
+class TimeTableScreen extends StatefulWidget {
   final String userId;  // 로그인한 사용자 학번
-
   const TimeTableScreen({super.key, required this.userId});
 
+  @override
+  State<TimeTableScreen> createState() => _TimeTableScreenState();
+}
+class _TimeTableScreenState extends State<TimeTableScreen> {
   @override
   Widget build(BuildContext context) {
     const ivory = Color(0xFFFAF8F3);
@@ -16,6 +21,7 @@ class TimeTableScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: ivory,
         elevation: 0,
+        centerTitle: true,
         title: const Text(
           "시간표",
           style: TextStyle(
@@ -24,10 +30,45 @@ class TimeTableScreen extends StatelessWidget {
             color: Color(0xFF3E2A25),
           ),
         ),
+        actions: [
+    IconButton(
+      icon: const Icon(Icons.add_circle_rounded, size: 28),
+      color: const Color(0xFF3E2A25),
+      onPressed: () async {
+        final added = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TimeTableAddScreen(userId: widget.userId),
+          ),
+        );
+
+        if (added == true) {
+          setState(() {});
+        }
+      },
+    ),
+IconButton(
+      icon: const Icon(Icons.remove_circle_rounded, size: 28),
+      color: const Color(0xFF7A0E1D), 
+      onPressed: () async {
+        final deleted = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TimeTableDeleteScreen(userId: widget.userId),
+          ),
+        );
+
+        if (deleted == true) {
+          setState(() {});
+        }
+      },
+    ),
+
+  ],
       ),
 
       body: FutureBuilder<List<TimeTableItem>>(
-        future: TimeTableService.fetchComposedTimetable(userId),
+        future: TimeTableService.fetchComposedTimetable(widget.userId),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());

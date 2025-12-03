@@ -59,4 +59,34 @@ class TimeTableService {
 
     return result;
   }
+
+  static Future<bool> addTimetable({
+    required String userId,
+    required String courseCode,
+  }) async {
+    final body = {
+      "user_id": userId,
+      "course_code": courseCode,
+    };
+
+    final response = await http.post(
+      Uri.parse("$baseUrl/schedules/"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(body),
+    );
+
+    return response.statusCode == 200;
+  }
+
+  static Future<bool> deleteTimetable({
+    required String userId,
+    required String courseCode,
+  }) async {
+    final url = Uri.parse("$baseUrl/schedules/$userId/$courseCode");
+
+  final response = await http.delete(url);
+
+  return response.statusCode == 200;
+  }
+
 }
