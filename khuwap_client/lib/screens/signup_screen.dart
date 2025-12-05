@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'login_screen.dart'; // 나중에 만들 파일
+import 'login_screen.dart';
+import '../config/api.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -133,9 +134,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 height: 52,
                 child: ElevatedButton(
                   onPressed: () async {
-                    final url = Uri.parse(
-                      'http://localhost:8000/users/register',
-                    );
+                    final url = Uri.parse('$coreUrl/users/register');
 
                     final body = jsonEncode({
                       "user_id": userIdController.text,

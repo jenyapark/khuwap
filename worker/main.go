@@ -6,12 +6,27 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
 
 	"github.com/pebbe/zmq4"
 )
+
+var (
+	ZMQPullAddr    = getEnv("ZMQ_PULL_ADDR", "tcp://localhost:5555")
+	ZMQPushAddr    = getEnv("ZMQ_PUSH_ADDR", "tcp://localhost:5556")
+	coreServiceURL = getEnv("CORE_SERVICE_URL", "http://localhost:8000")
+)
+
+// 환경변수 읽기 헬퍼
+func getEnv(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}
 
 func generateWorkerID() string {
 	rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -23,10 +38,10 @@ func main() {
 	log.Printf("[%s] Worker started and DB persistence enabled...", workerID)
 
 	pull, _ := zmq4.NewSocket(zmq4.PULL)
-	pull.Connect("tcp://localhost:5555")
+	pull.Connect(ZMQPullAddr)
 
 	push, _ := zmq4.NewSocket(zmq4.PUSH)
-	push.Connect("tcp://localhost:5556")
+	push.Connect(ZMQPushAddr)
 
 	for {
 

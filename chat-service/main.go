@@ -15,7 +15,7 @@ func main() {
 	http.HandleFunc("/ws", wsHandler)
 
 	fmt.Println("server started on :8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	if err := http.ListenAndServe(":"+wsPort, nil); err != nil {
 		log.Fatal(err)
 	}
 }

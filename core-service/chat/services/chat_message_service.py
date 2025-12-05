@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select, insert
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 from chat.models import chat_messages   
@@ -22,7 +22,7 @@ def save_message(
             room_id=room_id,
             sender_id=sender_id,
             content=content,
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
         )
     )
     db.commit()
@@ -42,5 +42,5 @@ def get_messages_by_room(
         .order_by(chat_messages.c.timestamp.asc())
     )
 
-    rows = db.execute(stmt).fetchall()
+    rows = db.execute(stmt).mappings().all()
     return rows

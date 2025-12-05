@@ -10,12 +10,10 @@ def valiate_post_creation(user_id: str, current_course: str, desired_course: str
     #현재 수강 과목 여부 확인
     has_current_course = conn.execute(
         select(schedules).where(
-            and_(
-                schedules.c.user_id == user_id,
-                schedules.c.course_code == current_course
-            )
+            (schedules.c.user_id == user_id) &
+            (schedules.c.course_code == current_course)
         )
-    ).first()
+    ).mappings().first()
 
     if not has_current_course:
         return False, "현재 수강 중인 과목이 아닙니다."
@@ -23,12 +21,10 @@ def valiate_post_creation(user_id: str, current_course: str, desired_course: str
     #희망 과목 중복 수강 금지
     has_desired_course = conn.execute(
         select(schedules).where(
-            and_(
-                schedules.c.user_id == user_id,
-                schedules.c.course_code == desired_course
-            )
+            (schedules.c.user_id == user_id) &
+            (schedules.c.course_code == desired_course)
         )
-    ).first()
+    ).mappings().first()
 
     if has_desired_course:
         return False, "이미 해당 과목을 수강 중입니다."
@@ -62,8 +58,8 @@ def valiate_post_creation(user_id: str, current_course: str, desired_course: str
     ).mappings().all()
 
     has_conflict = check_time_conflict(
-        requester_schedules=[desired_course_info],
-        accepter_schedules=user_schedules,
+        requester_schedules=[dict(desired_course_info)],
+        accepter_schedules=[dict(s) for s in user_schedules],
         requester_excluded_course=desired_course,
         accepter_excluded_course=current_course
     )
@@ -74,13 +70,11 @@ def valiate_post_creation(user_id: str, current_course: str, desired_course: str
     #동일 과목으로 등록된 게시글 중복 방지
     existing_post = conn.execute(
         select(exchange).where(
-            and_(
-                exchange.c.author_id == user_id,
-                exchange.c.current_course == current_course,
-                exchange.c.status != 'completed' #교환 완료 상태가 아니면 중복으로 간주함
-            )
+            (exchange.c.author_id == user_id) &
+            (exchange.c.current_course == current_course) &
+            (exchange.c.status != "completed")
         )
-    ).first()
+    ).mappings().first()
 
     if existing_post:
         return False, "이미 동일 과목으로 등록된 게시글이 존재합니다."

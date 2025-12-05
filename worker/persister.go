@@ -7,8 +7,6 @@ import (
 	"net/http"
 )
 
-const coreServiceURL = "http://localhost:8000"
-
 func SaveMessageViaAPI(msg *ChatMessage) error {
 	// 메시지 구조체를 JSON 바이트로 변환
 	msgBytes, err := json.Marshal(msg)

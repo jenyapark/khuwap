@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/pebbe/zmq4"
 )
@@ -13,6 +14,20 @@ var (
 	zmqPull *zmq4.Socket
 )
 
+var (
+	ZMQPushBind    = getEnv("ZMQ_PUSH_BIND", "tcp://*:5555") // 웹소켓 -> worker 방향
+	ZMQPullBind    = getEnv("ZMQ_PULL_BIND", "tcp://*:5556") // worker -> 웹소켓 방향
+	wsPort         = getEnv("WS_PORT", "8080")
+	coreServiceURL = getEnv("CORE_SERVICE_URL", "http://localhost:8000")
+)
+
+func getEnv(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}
+
 func initZMQ() {
 	var err error
 
@@ -20,7 +35,7 @@ func initZMQ() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := zmqPush.Bind("tcp://*:5555"); err != nil {
+	if err := zmqPush.Bind(ZMQPushBind); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("ZeroMQ PUSH bound on 5555")
@@ -29,7 +44,7 @@ func initZMQ() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := zmqPull.Bind("tcp://*:5556"); err != nil {
+	if err := zmqPull.Bind(ZMQPullBind); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("ZeroMQ PULL bound on 5556")

@@ -111,7 +111,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // <--- 이제 _ChatScreenState의 일부로 인식됩니다.
     const ivory = Color(0xFFFAF8F3);
     const deepRed = Color(0xFF8B0000);
     const deepBrown = Color(0xFF4A2A25);

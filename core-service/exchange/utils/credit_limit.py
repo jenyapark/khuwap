@@ -21,13 +21,16 @@ def check_credit_limit(conn, user_id: str, new_course_code: str | None = None, d
         .join(schedules, schedules.c.course_code == courses.c.course_code)
         .where(schedules.c.user_id == user_id)
     )
-    total_credit = sum(r["credit"] for r in conn.execute(query).mappings().all())
+
+    rows = conn.execute(query).mappings().all()
+    total_credit = sum((r.get("credit") or 0) for r in rows)
 
     # 새 과목 추가 시
     if new_course_code:
         new_course_credit = conn.execute(
             select(courses.c.credit).where(courses.c.course_code == new_course_code)
         ).scalar_one_or_none() or 0
+
         total_credit += new_course_credit
 
     # 교환 시, 기존 과목 제거
@@ -35,6 +38,7 @@ def check_credit_limit(conn, user_id: str, new_course_code: str | None = None, d
         drop_course_credit = conn.execute(
             select(courses.c.credit).where(courses.c.course_code == drop_course_code)
         ).scalar_one_or_none() or 0
+
         total_credit -= drop_course_credit
 
     # 최대 학점 가져오기
@@ -44,4 +48,5 @@ def check_credit_limit(conn, user_id: str, new_course_code: str | None = None, d
 
     if total_credit > max_credit:
         return False, f"최대 수강 가능 학점({max_credit})을 초과합니다."
+    
     return True, "학점 제한 검증 통과"

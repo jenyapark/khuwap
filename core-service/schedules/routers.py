@@ -106,7 +106,7 @@ def create_schedule(schedule: ScheduleCreate):
             return error_response(message=msg)
         
 
-        conn.execute(insert(schedules).values(**jsonable_encoder(schedule)))
+        conn.execute(insert(schedules).values(**schedule.model_dump()))
         conn.commit()
 
         return success_response(
@@ -122,14 +122,14 @@ def get_user_schedules(user_id: str):
         result = conn.execute(
             select(schedules).where(schedules.c.user_id == user_id)
         )
-
-        if not result:
-            return success_response(
-                data = [],
-                message = "해당 사용자의 수강 내역이 없습니다."
-            )
-
         rows = result.mappings().all()
+
+        if not rows:
+            return success_response(
+                data=[],
+                message="해당 사용자의 수강 내역이 없습니다."
+            )
+        
         return success_response(
             data = jsonable_encoder(rows),
             message = "수강 내역 조회 성공"

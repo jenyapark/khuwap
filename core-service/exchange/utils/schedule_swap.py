@@ -2,7 +2,7 @@ from sqlalchemy import delete, insert, update
 from schedules.models import schedules
 from exchange.models import exchange, exchange_requests
 
-def perform_course_swap(conn, requester_id: int, accepter_id: int, desired_course: str, current_course: str):
+def perform_course_swap(conn, requester_id: str, accepter_id: str, desired_course: str, current_course: str):
     """
     실제 교환 수행:
     - requester_id: 교환 요청자

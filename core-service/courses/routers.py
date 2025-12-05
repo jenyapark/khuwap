@@ -4,7 +4,7 @@ from sqlalchemy import select, insert, update, delete
 from common.db import engine
 from common.responses import success_response, error_response
 from courses.models import courses
-from courses.schemas import Course, CourseCreate
+from courses.schemas import Course, CourseCreate, CourseRead
 
 router = APIRouter( tags=["courses"])
 
@@ -14,10 +14,11 @@ def get_courses():
     with engine.connect() as conn:
         result = conn.execute(select(courses))
         rows = result.mappings().all()
-        return success_response(
-            data = jsonable_encoder(rows),
-            message = "전체 과목 목록이 조회되었습니다."
-        )
+
+    return success_response(
+        data = jsonable_encoder(rows),
+        message = "전체 과목 목록이 조회되었습니다."
+    )
     
 #학수번호로 과목 조회
 @router.get("/detail")
@@ -46,8 +47,6 @@ def create_course(course: CourseCreate):
         existing = conn.execute(
             select(courses).where(courses.c.course_code == course.course_code)
         ).fetchone()
-        conn.commit()
-
 
         if existing:
             return error_response(

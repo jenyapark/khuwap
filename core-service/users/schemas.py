@@ -9,7 +9,7 @@ class User(BaseModel):
     max_credit: int
 
 class UserCreate(User):
-    password: str 
+    pass
 
 class UserResponse(User):
     firebase_uid: str | None = None

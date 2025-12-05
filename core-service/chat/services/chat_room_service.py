@@ -26,7 +26,7 @@ def get_or_create_chat_room(
         )
         .limit(1)
     )
-    row = db.execute(stmt).fetchone()
+    row = db.execute(stmt).mappings().first()
     if row:
         return row
 
@@ -79,7 +79,7 @@ def get_my_chat_rooms(db: Session, user_id: str):
         .order_by(chat_rooms.c.updated_at.desc())
     )
 
-    rows = db.execute(stmt).fetchall()
+    rows = db.execute(stmt).mappings().all()
     return rows
 
 

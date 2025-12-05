@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/exchange_item.dart';
 import '../models/request_item.dart';
+import '../config/api.dart';
 
 class ExchangeService {
-  static const baseUrl = "http://localhost:8000";
+  static String get baseUrl => coreUrl;
 
   // 교환글 목록 받아오기
   static Future<List<dynamic>> fetchExchangeRaw() async {
@@ -77,11 +78,8 @@ class ExchangeService {
   // 내 글 목록 RAW 데이터
   static Future<List<dynamic>> fetchMyPostsRaw(String userId) async {
     final res = await http.get(Uri.parse("$baseUrl/exchange/mylist/$userId"));
-
     if (res.statusCode != 200) return [];
-
     final body = jsonDecode(res.body);
-
     return body["data"] ?? [];
   }
 
@@ -148,23 +146,14 @@ class ExchangeService {
 
   // 특정 교환글 RAW 조회
   static Future<Map<String, dynamic>?> fetchPostRaw(String postUUID) async {
-    final url = Uri.parse("http://localhost:8000/exchange/$postUUID");
+    final res = await http.get(Uri.parse("$baseUrl/exchange/$postUUID"));
+    if (res.statusCode != 200) return null;
 
-    final res = await http.get(url);
-
-    if (res.statusCode != 200) {
-      print("Failed to load exchange post raw: ${res.body}");
-      return null;
-    }
-
-    final data = jsonDecode(res.body);
-    return data["data"]; // current_course / desired_course 포함된 RAW 데이터
+    return jsonDecode(res.body)["data"];
   }
 
   static Future<String?> fetchAuthorId(String postUUID) async {
-    final url = Uri.parse("http://localhost:8000/exchange/post/$postUUID");
-    final res = await http.get(url);
-
+    final res = await http.get(Uri.parse("$baseUrl/exchange/post/$postUUID"));
     if (res.statusCode != 200) return null;
 
     final data = jsonDecode(res.body);
@@ -231,14 +220,13 @@ class ExchangeService {
 
     final response = await http.get(url);
 
-    if (response.statusCode == 200) {
-      final decoded = json.decode(response.body);
-      final List data = decoded["data"];
-
-      return data.map((item) => RequestItem.fromJson(item)).toList();
-    } else {
+    if (response.statusCode != 200) {
       throw Exception("보낸 요청 조회 실패");
     }
+    final decoded = json.decode(response.body);
+    final List data = decoded["data"];
+
+    return data.map((item) => RequestItem.fromJson(item)).toList();
   }
 
   static Future<Map<String, dynamic>?> getRawByPostUUID(String postUUID) async {
@@ -284,13 +272,11 @@ class ExchangeService {
     required String postUUID,
   }) async {
     final url = Uri.parse("$baseUrl/exchange/request/");
-
     final res = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"requester_id": requesterId, "post_uuid": postUUID}),
     );
-    print("response body: ${res.body}");
 
     return res.statusCode == 201;
   }

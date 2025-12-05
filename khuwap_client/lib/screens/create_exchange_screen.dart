@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api.dart';
 
 class CreateExchangeScreen extends StatefulWidget {
   const CreateExchangeScreen({super.key});
@@ -98,7 +99,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse("http://localhost:8000/exchange/create"),
+        Uri.parse("$coreUrl/exchange/create"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(body),
       );

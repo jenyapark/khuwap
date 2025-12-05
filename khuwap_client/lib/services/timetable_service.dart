@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/timetable_item.dart';
+import '../config/api.dart';
 
 class TimeTableService {
-  static const baseUrl = "http://localhost:8000";
+  static String get baseUrl => coreUrl;
 
   //사용자 시간표 raw 목록 가져오기
   static Future<List<dynamic>> fetchRawTimetable(String userId) async {

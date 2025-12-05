@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'signup_screen.dart';
 import 'home_screen.dart';
+import '../config/api.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,8 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
 
   Future<void> _loginUser() async {
-    final url = Uri.parse('http://localhost:8000/users/login');
-
+    final url = Uri.parse('$coreUrl/users/login');
     final body = jsonEncode({
       "email": emailController.text.trim(),
       "password": passwordController.text.trim(),

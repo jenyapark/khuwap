@@ -24,7 +24,9 @@ def create_exchange_post(payload: ExchangeCreate):
         
         new_post = payload.model_dump()
         result = conn.execute(
-            insert(exchange).values(**new_post).returning(exchange)
+            insert(exchange)
+            .values(**new_post)
+            .returning(exchange)
         )
         conn.commit()
         created = result.mappings().first()
@@ -42,8 +44,7 @@ def create_exchange_post(payload: ExchangeCreate):
 @router.get("/list", response_model = list[ExchangeResponse])
 def get_all_exchange_posts():
     with engine.connect() as conn:
-        result = conn.execute(select(exchange))
-        posts = result.mappings().all()
+        posts = conn.execute(select(exchange)).mappings().all()
         
     return success_response(
         data = jsonable_encoder(posts),
@@ -55,10 +56,9 @@ def get_all_exchange_posts():
 @router.get("/{post_uuid}", response_model = ExchangeResponse)
 def get_exchange_post(post_uuid: str):
     with engine.connect() as conn:
-        result = conn.execute(
+        post = conn.execute(
             select(exchange).where(exchange.c.post_uuid == post_uuid)
-        )
-        post = result.mappings().first()
+        ).mappings().first()
         
     if not post:
         return error_response( message = "게시글을 찾을 수 없습니다.", status_code = 404)
@@ -74,20 +74,28 @@ def get_exchange_post(post_uuid: str):
 @router.patch("/{post_uuid}", response_model = ExchangeResponse)
 def update_exchange_post(post_uuid: str, payload: ExchangeUpdate):
     update_data = payload.model_dump(exclude_unset=True)
+    
     if not update_data:
         return error_response(message = "수정할 내용이 없습니다.", status_code = 400)
     
     with engine.connect() as conn:
-        existing = conn.execute(select(exchange).where(exchange.c.post_uuid == post_uuid)).mappings().first()
+        existing = conn.execute(
+            select(exchange).where(exchange.c.post_uuid == post_uuid)
+        ).mappings().first()
         
         if not existing:
             return error_response(message = "게시글을 찾을 수 없습니다.", status_code = 404)
+        
         conn.execute(
-                update(exchange).where(exchange.c.post_uuid == post_uuid).values(**update_data)
+                update(exchange)
+                .where(exchange.c.post_uuid == post_uuid)
+                .values(**update_data)
         )
         conn.commit()
 
-        updated = conn.execute(select(exchange).where(exchange.c.post_uuid == post_uuid)).mappings().first()
+        updated = conn.execute(
+            select(exchange).where(exchange.c.post_uuid == post_uuid)
+        ).mappings().first()
 
     return success_response(
         data = jsonable_encoder(updated),
@@ -99,26 +107,32 @@ def update_exchange_post(post_uuid: str, payload: ExchangeUpdate):
 @router.delete("/{post_uuid}")
 def delete_exchange_post(post_uuid: str):
     with engine.connect() as conn:
-        existing = conn.execute(select(exchange).where(exchange.c.post_uuid == post_uuid)).mappings().first()
+        existing = conn.execute(
+            select(exchange).where(exchange.c.post_uuid == post_uuid)
+        ).mappings().first()
 
         if not existing:
             return error_response(message = "게시글을 찾을 수 없습니다.", status_code = 404)
             
-        conn.execute(delete(exchange).where(exchange.c.post_uuid == post_uuid))
+        conn.execute(
+            delete(exchange).where(exchange.c.post_uuid == post_uuid)
+        )
         conn.commit()
         
-    return success_response(message = "게시글이 삭제되었습니다.", status_code=200)
+    return success_response(
+        message = "게시글이 삭제되었습니다.", 
+        status_code=200
+    )
 
 # 내가 작성한 게시글 목록 조회
 @router.get("/mylist/{user_id}")
 def get_my_exchange_posts(user_id: str):
     with engine.connect() as conn:
-        result = conn.execute(
+        posts = conn.execute(
             select(exchange)
             .where(exchange.c.author_id == user_id)
             .order_by(exchange.c.created_at.desc())
-        )
-        posts = result.mappings().all()
+        ).mappings().all()
 
     # 작성된 글이 하나도 없는 경우
     if not posts:

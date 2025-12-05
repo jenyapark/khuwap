@@ -10,7 +10,7 @@ users = Table(
     Column("username", String, nullable=False),                       
     Column("email", String, unique=True, nullable=False),              
     Column("password", String, nullable=False),                         
-    Column("created_at", DateTime, default=lambda: datetime.now(timezone.utc)), 
+    Column("created_at", DateTime, default=lambda: datetime.now(timezone.utc), nullable=False), 
     Column("max_credit", Integer, nullable=False, default = 18)
 )
 

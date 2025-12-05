@@ -9,6 +9,10 @@ class ChatRoomBase(BaseModel):
     author_id: str
     last_message: str
     updated_at: datetime
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
 
 
 class ChatRoomListResponse(BaseModel):
@@ -21,6 +25,8 @@ class ChatMessageBase(BaseModel):
     sender_id: str
     content: str
     created_at: datetime
+
+    model_config = {"from_attributes": True}
 
 
 class ChatMessageListResponse(BaseModel):

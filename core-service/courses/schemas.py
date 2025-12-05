@@ -15,6 +15,6 @@ class Course(BaseModel):
 class CourseCreate(Course):
     pass
 
-class Course(Course):
+class CourseRead(Course):
     class Config:
         orm_mode = True

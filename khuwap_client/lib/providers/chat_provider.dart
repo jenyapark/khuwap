@@ -6,9 +6,11 @@ import '../models/chat_room_item.dart';
 import '../services/chat_ws_service.dart';
 import '../services/exchange_service.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import '../config/api.dart';
 
 class ChatProvider extends ChangeNotifier {
   final ChatWebSocketService _ws = ChatWebSocketService();
+
   final List<ChatMessageItem> messages = [];
   List<ChatRoomItem> rooms = [];
 
@@ -20,12 +22,11 @@ class ChatProvider extends ChangeNotifier {
   WebSocketChannel? _wsChannel;
 
   bool _isConnected = false;
-
   bool get isConnected => _isConnected;
 
+// 게시글 상태 로드
   Future<void> loadPostStatus(String postUUID) async {
-    final url = Uri.parse("http://localhost:8000/exchange/$postUUID");
-    final res = await http.get(url);
+    final res = await http.get(Uri.parse("$coreUrl/exchange/$postUUID"));
 
     if (res.statusCode != 200) {
       print("Failed to load post status");
@@ -40,8 +41,9 @@ class ChatProvider extends ChangeNotifier {
   bool get isCompleted => currentPostStatus == "completed";
 
   Future<void> loadRooms(String userId) async {
-    final url = Uri.parse("http://localhost:8000/chat/rooms?user_id=$userId");
-    final res = await http.get(url);
+    final res = await http.get(
+      Uri.parse("$coreUrl/chat/rooms?user_id=$userId"),
+    );
 
     if (res.statusCode != 200) {
       print("Failed to load rooms: ${res.body}");
@@ -133,11 +135,9 @@ class ChatProvider extends ChangeNotifier {
       return;
     }
     try {
-      final url = Uri.parse(
-        "http://localhost:8000/chat/messages?room_id=$roomId&user_id=$userId",
-      );
-
-      final res = await http.get(url);
+      final res = await http.get(
+      Uri.parse("$coreUrl/chat/messages?room_id=$roomId&user_id=$userId"),
+    );
       if (res.statusCode != 200) {
         print("Failed to load messages: ${res.body}");
         return;
@@ -272,13 +272,14 @@ class ChatProvider extends ChangeNotifier {
     required String authorId,
     required String peerId,
   }) async {
-    const String baseUrl = "http://localhost:8000";
+
     final Map<String, dynamic> body = {
-      "post_uuid": postUUID,
-      "author_id": authorId, // 일반적으로 게시글 작성자
-      "peer_id": peerId, // 일반적으로 요청을 보내는 사용자
+    "post_uuid": postUUID,
+    "author_id": authorId,
+    "peer_id": peerId,
     };
-    final uri = Uri.parse('$baseUrl/chat/room/create').replace(
+
+    final uri = Uri.parse('$coreUrl/chat/room/create').replace(
       queryParameters: {
         'post_uuid': postUUID,
         'author_id': authorId,
@@ -286,24 +287,19 @@ class ChatProvider extends ChangeNotifier {
       },
     );
 
+
     try {
-      // 3. API 호출
       final response = await http.post(
         uri,
         headers: {'Content-Type': 'application/json'},
         body: json.encode(body),
       );
 
-      // 4. 응답 처리
       if (response.statusCode == 200) {
         final responseData = json.decode(utf8.decode(response.bodyBytes));
-
-        // 5. 'room_id' 추출 및 반환
-        final String roomId = responseData['room_id'] as String;
-        print(">>> Chat Room created successfully. Room ID: $roomId");
-        return roomId;
+        return responseData['room_id'] as String;
       } else {
-        // 200 OK가 아닌 경우 (404, 500 등)
+
         final errorBody = utf8.decode(response.bodyBytes);
         print(
           ">>> Chat Room creation failed. Status: ${response.statusCode}, Body: $errorBody",

@@ -15,6 +15,7 @@ async def get_users():
     with engine.connect() as conn:
         result = conn.execute(select(users))
         rows = result.mappings().all()
+
         return success_response(
             data = jsonable_encoder(rows),
             message = "전체 사용자 목록이 조회되었습니다.",
@@ -56,7 +57,7 @@ def create_user(user: User):
 
 #특정 사용자 조회
 @router.get("/{user_id}")
-async def get_user_by_id(user_id: str):
+def get_user_by_id(user_id: str):
     with engine.connect() as conn:
         result = conn.execute(
             select(users).where(users.c.user_id == user_id)
@@ -75,7 +76,7 @@ async def get_user_by_id(user_id: str):
         )
 
 @router.put("/{user_id}")
-async def update_user(user_id: str, user: UserCreate):
+def update_user(user_id: str, user: UserCreate):
     with engine.connect() as conn:
         existing = conn.execute(
             select(users).where(users.c.user_id == user_id)
@@ -90,7 +91,7 @@ async def update_user(user_id: str, user: UserCreate):
         conn.execute(
             update(users)
             .where(users.c.user_id == user_id)
-            .values(**user.dict())
+            .values(**user.model_dump())
         )
         conn.commit()
 
@@ -100,7 +101,7 @@ async def update_user(user_id: str, user: UserCreate):
         )
 
 @router.delete("/{user_id}")
-async def delete_user(user_id: str):
+def delete_user(user_id: str):
     with engine.connect() as conn:
         existing = conn.execute(
             select(users).where(users.c.user_id == user_id)
@@ -141,7 +142,7 @@ def login_user(user: UserLogin):
                 status_code=401
             )
 
-        # 로그인 성공 → 유저 데이터 반환
+        # 로그인 성공
         return success_response(
             data={
                 "user_id": existing_user.user_id,
